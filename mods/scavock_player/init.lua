@@ -71,6 +71,10 @@ core.register_globalstep(function(dtime)
 		local ctrl = player:get_player_control()
 		local sprinting = ctrl.aux1 and ctrl.up and not ctrl.sneak
 		local mult = weight_mult(player) * (sprinting and SPRINT_MULT or 1)
+		-- stagger (scavock_combat): brief hard slow, chance-based (§7)
+		if scavock.stagger_mult then
+			mult = mult * scavock.stagger_mult(name)
+		end
 		local prev = sprint_state[name]
 		if not prev or math.abs(prev - mult) > 0.01 then
 			sprint_state[name] = mult

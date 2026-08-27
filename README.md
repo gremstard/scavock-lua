@@ -43,6 +43,8 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 | Material ladder ×  form ladder (§6) | ✅ 5 materials × (pick, axe, dagger, sword, war axe, double axe, spear) |
 | Weapon roster as roles, not ranks (§7) | ✅ per-form speed/damage/reach; TTK tuned on *time* (~5s window each) |
 | Long TTK, gradual gear slope (§7) | ✅ +0..+2 damage across five tiers; no one-shots |
+| Blocking windows per weapon (§7) | ✅ right-click opens the window (dagger 0.55s … war axe 0.22s); sprint halves it; 75% absorb |
+| Stagger: chance, weight-scaled, ICD (§7) | ✅ 8% dagger … 32% war axe (max 40%); 2s internal cooldown; brief hard slow |
 | STEP_HEIGHT = 1.0 (§7) | ✅ `stepheight = 1.1` |
 | Unlimited sprint, no stamina meter (§7) | ✅ double-tap W or Shift, 1.65× (D6, engine fork) |
 | Weight governs speed, floor at 0.6× (§7) | ✅ occupied grid cells → speed multiplier |
@@ -72,7 +74,7 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 
 ### Deferred (big rocks, in doc order)
 
-Blocking/stagger combat model, two-stage death (downed/finish/revive, §12),
+Two-stage death (downed/finish/revive, §12),
 reinforcement crafting + damage pool (§11), noise & stealth (§8), creatures
 (§24), Icelands/Cavock/Muvock and the compass system (§4b/4c), proximity voice,
 wipe cycles as a server feature, evac block-structure damage/repair (D1).
