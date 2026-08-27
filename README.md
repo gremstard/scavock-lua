@@ -57,8 +57,9 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 - **Slot inventory, not Tarkov grid.** Multi-cell rotatable grid inventory is
   not a Luanti engine feature. Slot grid stands in; a real grid needs engine work
   (this is where an actual engine fork would eventually earn its name).
-- **Sprint input is Aux1**, not double-tap-W/Shift (D6) — Luanti servers only
-  receive the fixed control bitset; Shift is hardwired to sneak.
+- ~~Sprint input is Aux1~~ **Resolved by the engine fork:** D6 is implemented
+  as designed — double-tap forward OR hold Shift, both feeding the aux1 bit;
+  crouch/sneak moved to C/Ctrl. (`doubletap_forward_sprint` engine setting.)
 - **Mountains are altitude-approximated**, not an independent noise field (D17
   needs a custom mapgen pass).
 - **Weight = backpack fill fraction**, since items have no per-item weight yet.

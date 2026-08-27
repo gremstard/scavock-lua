@@ -42,8 +42,9 @@ end)
 
 -- ---------------------------------------------------------------------------
 -- Sprint + carried-weight speed. One physics override, recomputed cheaply.
--- Sprint input: Aux1 (default E) or double-tap forward if the client has
--- pressing W twice bound; Luanti servers only see Aux1, so that is the input.
+-- Sprint input (D6, both implemented in the Scavock engine fork): double-tap
+-- forward, or hold Shift (the default aux1 binding). Both reach the server as
+-- the aux1 control bit; the ctrl.up check below keeps sprint forward-only.
 -- No stamina meter — sprint is unlimited (§7 Confirmed).
 -- ---------------------------------------------------------------------------
 local sprint_state = {}
