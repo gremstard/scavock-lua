@@ -18,7 +18,8 @@ engine-level features.
 3. Open Luanti → select the Scavock game → create a world (mapgen v7, any seed —
    seeds are arbitrary strings, matching D16) → play.
 
-Controls that matter: **E + W** to sprint (unlimited — no stamina, §7),
+Controls that matter: **double-tap W or hold Shift** to sprint (unlimited —
+no stamina, §7), **C/Ctrl** to crouch, **I** for the grid backpack,
 right-click an **Evac Beacon** to start a 10-second extraction channel,
 `/vault` and `/stash` (or the buttons on the inventory screen) for storage.
 
@@ -43,8 +44,8 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 | Weapon roster as roles, not ranks (§7) | ✅ per-form speed/damage/reach; TTK tuned on *time* (~5s window each) |
 | Long TTK, gradual gear slope (§7) | ✅ +0..+2 damage across five tiers; no one-shots |
 | STEP_HEIGHT = 1.0 (§7) | ✅ `stepheight = 1.1` |
-| Unlimited sprint, no stamina meter (§7) | ✅ Aux1+forward, 1.65× |
-| Weight governs speed, floor at 0.6× (§7) | ✅ backpack fill fraction → speed multiplier |
+| Unlimited sprint, no stamina meter (§7) | ✅ double-tap W or Shift, 1.65× (D6, engine fork) |
+| Weight governs speed, floor at 0.6× (§7) | ✅ occupied grid cells → speed multiplier |
 | Death drops full inventory (§12) | ✅ |
 | Vault survives everything, deliberately small (§5) | ✅ 8 slots, persisted in player meta |
 | Evac points across large biomes, cooldown model (D1, §4) | ✅ beacons w/ 120s cooldown; block-damage/repair states not yet |
@@ -54,15 +55,20 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 
 ### Known adaptations (engine reality vs. doc)
 
-- **Slot inventory, not Tarkov grid.** Multi-cell rotatable grid inventory is
-  not a Luanti engine feature. Slot grid stands in; a real grid needs engine work
-  (this is where an actual engine fork would eventually earn its name).
+- ~~Slot inventory, not Tarkov grid~~ **Implemented (scavock_grid):** the
+  backpack is a true 8x6 spatial grid — items occupy multi-cell footprints,
+  rotate (R while held), and the vault (4x2) is grid-restricted with a
+  transfer view. Interaction is click-to-move (pick up / place / rotate);
+  engine-native drag-and-drop is the remaining polish. The top row doubles
+  as the hotbar, so wieldables must anchor there. Engine-driven moves
+  (shift-click from crates, craft output) are policed into first-fit
+  placements by an allow-callback.
 - ~~Sprint input is Aux1~~ **Resolved by the engine fork:** D6 is implemented
   as designed — double-tap forward OR hold Shift, both feeding the aux1 bit;
   crouch/sneak moved to C/Ctrl. (`doubletap_forward_sprint` engine setting.)
 - **Mountains are altitude-approximated**, not an independent noise field (D17
   needs a custom mapgen pass).
-- **Weight = backpack fill fraction**, since items have no per-item weight yet.
+- **Weight = occupied grid cells**, since items have no per-item mass stat yet.
 
 ### Deferred (big rocks, in doc order)
 

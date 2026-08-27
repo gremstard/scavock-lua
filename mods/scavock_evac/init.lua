@@ -71,45 +71,33 @@ core.register_on_leaveplayer(function(player)
 end)
 
 local function storage_formspec(player_name, kind, size, label, note)
+	local list_h = size.h * 1.25 + 0.15
 	return table.concat({
-		"formspec_version[6]", "size[10.7,9.6]",
+		"formspec_version[6]", ("size[10.7,%f]"):format(1.4 + list_h + 7.9 + 0.5),
 		"label[0.4,0.5;", label, "]",
 		"label[0.4,1.0;", note, "]",
 		("list[detached:scavock_%s_%s;main;0.4,1.4;%d,%d;]")
 			:format(kind, player_name, size.w, size.h),
-		"list[current_player;main;0.4,4.8;8,4;]",
+		("list[current_player;main;0.4,%f;8,6;]"):format(1.4 + list_h + 0.4),
 		("listring[detached:scavock_%s_%s;main]"):format(kind, player_name),
 		"listring[current_player;main]",
 	})
 end
 
-local function show_vault(name)
-	core.show_formspec(name, "scavock_evac:vault",
-		storage_formspec(name, "vault", VAULT_SIZE, "Vault",
-			"Survives death and wipes. Deliberately small."))
-end
-local function show_stash(name)
+scavock_evac = scavock_evac or {}
+
+-- The vault has a grid view owned by scavock_grid; the stash stays a plain
+-- list (it stands in for base containers, which are not grid-restricted).
+function scavock_evac.show_stash(name)
 	core.show_formspec(name, "scavock_evac:stash",
 		storage_formspec(name, "stash", STASH_SIZE, "Extraction Stash",
 			"Banked by evac. Survives death; wiped with the map."))
 end
 
-core.register_chatcommand("vault", {
-	description = "Open your wipe-proof vault",
-	func = function(name) show_vault(name) return true end,
-})
 core.register_chatcommand("stash", {
 	description = "Open your extraction stash",
-	func = function(name) show_stash(name) return true end,
+	func = function(name) scavock_evac.show_stash(name) return true end,
 })
-
--- inventory-screen buttons (formname "" = the player inventory form)
-core.register_on_player_receive_fields(function(player, formname, fields)
-	if formname ~= "" then return end
-	local name = player:get_player_name()
-	if fields.vault then show_vault(name) end
-	if fields.stash then show_stash(name) end
-end)
 
 -- ---------------------------------------------------------------------------
 -- Evac beacon

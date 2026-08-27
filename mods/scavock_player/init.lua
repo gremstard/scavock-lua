@@ -7,26 +7,8 @@ local SPRINT_MULT = 1.65      -- §7 movement constants
 local MIN_WEIGHT_MULT = 0.6   -- §7: "never below roughly 0.6x"
 local STEP_HEIGHT = 1.1       -- §7 STEP_HEIGHT = 1.0 (+0.1 so the engine clears it)
 
--- ---------------------------------------------------------------------------
--- Inventory formspec: grid backpack + vault/stash access.
--- (True Tarkov-style multi-cell grid inventory is an engine-level feature
--- Luanti doesn't have; slot grid stands in for it. Recorded in README.)
--- ---------------------------------------------------------------------------
-local function inventory_formspec()
-	return table.concat({
-		"formspec_version[6]", "size[10.7,7.4]",
-		"label[0.4,0.5;Backpack]",
-		"list[current_player;main;0.4,0.9;8,4;]",
-		"button[0.4,5.9;3,0.9;vault;Vault]",
-		"button[3.6,5.9;3,0.9;stash;Extraction Stash]",
-		"label[6.9,6.35;Craft at a Workbench]",
-	})
-end
-
 core.register_on_joinplayer(function(player)
-	local inv = player:get_inventory()
-	inv:set_size("main", 32)
-	player:set_inventory_formspec(inventory_formspec())
+	-- inventory size and formspec are owned by scavock_grid (§9 grid inventory)
 	player:set_properties({ stepheight = STEP_HEIGHT })
 	-- remember first-ever spawn as "home" for evac teleport
 	local meta = player:get_meta()
@@ -50,16 +32,19 @@ end)
 local sprint_state = {}
 
 local function weight_mult(player)
-	-- fill fraction of the backpack stands in for carried weight
+	-- occupied grid cells stand in for carried weight (§7: weight is a speed
+	-- disadvantage only; capacity is already the grid's job)
 	local inv = player:get_inventory()
-	local filled, size = 0, inv:get_size("main")
+	local size = inv:get_size("main")
+	local cells = 0
 	for i = 1, size do
 		local st = inv:get_stack("main", i)
 		if not st:is_empty() then
-			filled = filled + st:get_count() / st:get_stack_max()
+			local isz = scavock.item_size(st:get_name())
+			cells = cells + isz.w * isz.h
 		end
 	end
-	local frac = math.min(filled / size, 1)
+	local frac = math.min(cells / size, 1)
 	return 1 - (1 - MIN_WEIGHT_MULT) * frac
 end
 

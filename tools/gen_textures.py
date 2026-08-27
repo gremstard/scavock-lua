@@ -346,6 +346,16 @@ def vault_icon():
     return blob(px, 8, 8, 3, (180, 185, 195))
 add("scavock_evac", "scavock_vault", vault_icon)
 
+# ---------- grid inventory ----------
+def grid_cell():
+    px = noise_fill((30, 34, 32), 3, R("cell"), alpha=235)
+    return border(px, (52, 58, 55))
+add("scavock_grid", "scavock_cell", grid_cell)
+def grid_cell_held():
+    px = noise_fill((40, 70, 50), 4, R("cellheld"), alpha=235)
+    return border(px, (86, 214, 124))
+add("scavock_grid", "scavock_cell_held", grid_cell_held)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

@@ -297,12 +297,12 @@ core.register_craft({ type = "fuel", recipe = "scavock_core:stick", burntime = 2
 -- Workbench: the only 3x3 craft surface (§6 "workbench tools" gate)
 -- ---------------------------------------------------------------------------
 local wb_formspec = table.concat({
-	"formspec_version[6]", "size[10.7,10.4]",
+	"formspec_version[6]", "size[10.7,12.1]",
 	"label[0.4,0.5;Workbench]",
 	"list[context;craft;0.4,0.9;3,3;]",
 	"image[4.5,2.2;0.8,0.8;scavock_stick.png^[transformR270]",
 	"list[context;output;5.6,2.2;1,1;]",
-	"list[current_player;main;0.4,5.4;8,4;]",
+	"list[current_player;main;0.4,5.4;8,6;]",
 	"listring[context;craft]", "listring[current_player;main]",
 	"listring[context;output]", "listring[current_player;main]",
 })
@@ -366,14 +366,14 @@ core.register_node("scavock_core:workbench", {
 -- ---------------------------------------------------------------------------
 local function furnace_formspec(fuel_pct, item_pct)
 	return table.concat({
-		"formspec_version[6]", "size[10.7,10.4]",
+		"formspec_version[6]", "size[10.7,12.1]",
 		"label[0.4,0.5;Furnace]",
 		"list[context;src;3.2,0.9;1,1;]",
 		"label[3.25,2.6;Fuel " .. ("%d%%"):format(fuel_pct) .. "]",
 		"list[context;fuel;3.2,3.3;1,1;]",
 		"label[4.9,2.05;→ " .. ("%d%%"):format(item_pct) .. "]",
 		"list[context;dst;5.9,1.5;2,2;]",
-		"list[current_player;main;0.4,5.4;8,4;]",
+		"list[current_player;main;0.4,5.4;8,6;]",
 		"listring[context;dst]", "listring[current_player;main]",
 		"listring[context;src]", "listring[current_player;main]",
 		"listring[context;fuel]", "listring[current_player;main]",
@@ -488,6 +488,32 @@ furnace_active_def.light_source = 8
 furnace_active_def.groups = { cracky = 2, not_in_creative_inventory = 1 }
 furnace_active_def.drop = "scavock_core:furnace"
 core.register_node("scavock_core:furnace_active", furnace_active_def)
+
+-- ---------------------------------------------------------------------------
+-- Grid inventory item sizes (§9: items occupy multiple cells based on size).
+-- Anything not listed is 1x1. {w, h} in cells, unrotated.
+-- ---------------------------------------------------------------------------
+scavock.item_sizes = {
+	["scavock_core:workbench"] = { 2, 2 },
+	["scavock_core:furnace"] = { 2, 2 },
+	["scavock_loot:crate"] = { 2, 2 },
+	["scavock_weapons:bow"] = { 1, 3 },
+}
+for _, m in ipairs(scavock.materials) do
+	scavock.item_sizes["scavock_tools:pick_" .. m.name] = { 2, 3 }
+	scavock.item_sizes["scavock_tools:axe_" .. m.name] = { 2, 3 }
+	scavock.item_sizes["scavock_weapons:dagger_" .. m.name] = { 1, 2 }
+	scavock.item_sizes["scavock_weapons:sword_" .. m.name] = { 1, 3 }
+	scavock.item_sizes["scavock_weapons:waraxe_" .. m.name] = { 2, 3 }
+	scavock.item_sizes["scavock_weapons:doubleaxe_" .. m.name] = { 2, 3 }
+	scavock.item_sizes["scavock_weapons:spear_" .. m.name] = { 1, 5 }
+end
+
+-- Size of an item by name, {w, h}. 1x1 unless registered above.
+function scavock.item_size(name)
+	local s = scavock.item_sizes[name]
+	return s and { w = s[1], h = s[2] } or { w = 1, h = 1 }
+end
 
 -- ---------------------------------------------------------------------------
 -- Mapgen aliases (required for mgv7 to know our nodes)

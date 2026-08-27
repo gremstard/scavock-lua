@@ -56,10 +56,10 @@ core.register_node("scavock_loot:crate", {
 		local meta = core.get_meta(pos)
 		meta:set_string("infotext", "Supply Crate")
 		meta:set_string("formspec", table.concat({
-			"formspec_version[6]", "size[10.7,9.2]",
+			"formspec_version[6]", "size[10.7,11.2]",
 			"label[0.4,0.5;Supply Crate]",
 			"list[context;main;0.4,0.9;8,2;]",
-			"list[current_player;main;0.4,4.2;8,4;]",
+			"list[current_player;main;0.4,4.2;8,6;]",
 			"listring[context;main]", "listring[current_player;main]",
 		}))
 		meta:get_inventory():set_size("main", 16)
