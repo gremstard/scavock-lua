@@ -1,0 +1,111 @@
+# Builds Scavock for macOS and Windows and attaches the zips to the release
+# for this tag. Asset names must stay Scavock-macOS.zip / Scavock-Windows.zip —
+# the promo site links to .../releases/latest/download/<name>.
+#
+# The engine is checked out from gremstard/scavock-engine (branch scavock) and
+# built with its own upstream-inherited CI scripts (util/ci, util/buildbot).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: game
+
+      - uses: actions/checkout@v4
+        with:
+          repository: gremstard/scavock-engine
+          ref: scavock
+          path: engine
+
+      - name: Install deps
+        working-directory: engine
+        run: |
+          mkdir downloads
+          source ./util/ci/common.sh
+          source ./util/ci/macos_sdk.sh
+          install_macos_precompiled_deps 11.3 arm64
+          install_macos_sdk 11.3 16.2 downloads
+
+      - name: Build
+        working-directory: engine
+        run: |
+          export osver=11.3 xcodever=16.2 arch=arm64 build_type=Release
+          mkdir build
+          cd build
+          export DEPS_DIR=/Users/Shared/macos${osver}_${arch}_deps
+          export USE_XCODE=no
+          ../util/ci/build_macos.sh
+
+      - name: Package with the game
+        run: |
+          APP=engine/build/macos/scavock.app
+          test -d "$APP"
+          mkdir -p "$APP/Contents/Resources/games/scavock"
+          rsync -a --exclude .git --exclude .github game/ "$APP/Contents/Resources/games/scavock/"
+          codesign --force --deep -s - "$APP"
+          ditto -c -k --keepParent "$APP" Scavock-macOS.zip
+
+      - name: Smoke test
+        run: |
+          unzip -q -d smoketest Scavock-macOS.zip
+          HOME=$(mktemp -d) ./smoketest/scavock.app/Contents/MacOS/scavock --version
+          HOME=$(mktemp -d) ./smoketest/scavock.app/Contents/MacOS/scavock --gameid list 2>&1 | grep -qx scavock
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Scavock-macOS.zip
+
+  windows:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: game
+
+      - uses: actions/checkout@v4
+        with:
+          repository: gremstard/scavock-engine
+          ref: scavock
+          path: engine
+
+      - name: Install MinGW toolchain
+        working-directory: engine
+        run: |
+          source ./util/ci/common.sh
+          install_mingw_deps 64 false
+          sudo ./util/buildbot/download_toolchain.sh /usr
+
+      - name: Build
+        working-directory: engine
+        run: |
+          EXISTING_MINETEST_DIR=$PWD ./util/buildbot/buildwin64.sh B
+
+      - name: Package with the game
+        run: |
+          Z=$(ls engine/B/build/*.zip | head -1)
+          mkdir out
+          unzip -q -d out "$Z"
+          D=$(echo out/*)
+          test -f "$D/bin/scavock.exe"
+          mkdir -p "$D/games/scavock"
+          rsync -a --exclude .git --exclude .github game/ "$D/games/scavock/"
+          (cd out && zip -qr "$GITHUB_WORKSPACE/Scavock-Windows.zip" .)
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Scavock-Windows.zip
