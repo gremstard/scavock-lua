@@ -10,6 +10,19 @@ local STEP_HEIGHT = 1.1       -- §7 STEP_HEIGHT = 1.0 (+0.1 so the engine clear
 core.register_on_joinplayer(function(player)
 	-- inventory size and formspec are owned by scavock_grid (§9 grid inventory)
 	player:set_properties({ stepheight = STEP_HEIGHT })
+	-- Visual identity (SCAVOCK_Visual_Identity.md): charcoal surfaces, slate
+	-- raised states, chartreuse reserved for selection/primary action
+	player:set_formspec_prepend(table.concat({
+		"bgcolor[#101114D0;true]",
+		"listcolors[#1C1E23;#2A2D34;#101114;#B6D62E;#101114]",
+		"style_type[button,image_button,item_image_button;",
+			"bgcolor=#1C1E23;textcolor=#E4E0D4;border=false]",
+		"style_type[button:hovered;bgcolor=#2A2D34]",
+		"style_type[label;textcolor=#E4E0D4]",
+		"style_type[field;textcolor=#E4E0D4]",
+	}))
+	player:hud_set_hotbar_image("scavock_hotbar_slot.png")
+	player:hud_set_hotbar_selected_image("scavock_hotbar_selected.png")
 	-- remember first-ever spawn as "home" for evac teleport
 	local meta = player:get_meta()
 	if meta:get_string("scavock_home") == "" then

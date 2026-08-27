@@ -169,7 +169,7 @@ local function render_grid(fs, player, id, x0, y0)
 				:format(px, py, CELL, CELL, id, i)
 		else
 			local tex = (hold and hold.grid == id and occ[i] == hold.idx)
-				and "scavock_cell_held.png" or "scavock_cell.png"
+				and "scavock_cell_held.png" or "scavock_cell_occupied.png"
 			fs[#fs + 1] = ("image[%f,%f;%f,%f;%s]")
 				:format(px, py, CELL, CELL, tex)
 		end

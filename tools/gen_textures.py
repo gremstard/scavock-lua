@@ -346,15 +346,52 @@ def vault_icon():
     return blob(px, 8, 8, 3, (180, 185, 195))
 add("scavock_evac", "scavock_vault", vault_icon)
 
-# ---------- grid inventory ----------
+# ---------- identity palette (SCAVOCK_Visual_Identity.md §3) ----------
+VOID = (16, 17, 20)
+CHARCOAL = (28, 30, 35)
+SLATE = (42, 45, 52)
+CHARTREUSE = (182, 214, 46)
+BONE = (228, 224, 212)
+
+# ---------- grid inventory (flat fills, subtle borders — §7 Inventory) ----------
 def grid_cell():
-    px = noise_fill((30, 34, 32), 3, R("cell"), alpha=235)
-    return border(px, (52, 58, 55))
+    px = blank((*CHARCOAL, 240))
+    return border(px, SLATE)
 add("scavock_grid", "scavock_cell", grid_cell)
+def grid_cell_occupied():
+    px = blank((*SLATE, 240))
+    return border(px, (58, 62, 70))
+add("scavock_grid", "scavock_cell_occupied", grid_cell_occupied)
 def grid_cell_held():
-    px = noise_fill((40, 70, 50), 4, R("cellheld"), alpha=235)
-    return border(px, (86, 214, 124))
+    px = blank((*SLATE, 240))
+    return border(px, CHARTREUSE)
 add("scavock_grid", "scavock_cell_held", grid_cell_held)
+
+# ---------- HUD (§7: crosshair is a small dot, not a reticle) ----------
+def crosshair():
+    px = blank()
+    for y in range(7, 9):
+        for x in range(7, 9):
+            px[y][x] = (*BONE, 230)
+    px[6][7] = (*VOID, 120); px[6][8] = (*VOID, 120)
+    px[9][7] = (*VOID, 120); px[9][8] = (*VOID, 120)
+    px[7][6] = (*VOID, 120); px[8][6] = (*VOID, 120)
+    px[7][9] = (*VOID, 120); px[8][9] = (*VOID, 120)
+    return px
+add("scavock_player", "crosshair", crosshair)
+add("scavock_player", "object_crosshair", crosshair)
+def hotbar_slot():
+    px = blank((*CHARCOAL, 190))
+    return border(px, (*SLATE, 255)[:3])
+add("scavock_player", "scavock_hotbar_slot", hotbar_slot)
+def hotbar_selected():
+    px = blank((0, 0, 0, 0))
+    for i in range(SIZE):
+        for t in range(2):
+            px[t][i] = (*CHARTREUSE, 255); px[SIZE-1-t][i] = (*CHARTREUSE, 255)
+            px[i][t] = (*CHARTREUSE, 255); px[i][SIZE-1-t] = (*CHARTREUSE, 255)
+    return px
+add("scavock_player", "scavock_hotbar_selected", hotbar_selected)
 
 def main():
     n = 0
