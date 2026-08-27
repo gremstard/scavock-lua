@@ -4,6 +4,11 @@
 
 scavock = {}
 
+-- Downed players (§12 two-stage death), keyed by player name. Owned by
+-- scavock_death; read by movement, combat, weapons and evac to disable
+-- verbs that a crawling player should not have.
+scavock.downed = {}
+
 scavock.materials = {
 	-- name, description, tier index (weapons/tools scale off this)
 	{ name = "scrap",    desc = "Scrap Metal" },

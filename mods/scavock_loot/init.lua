@@ -19,6 +19,8 @@ local LOOT_TABLE = {
 	{ "scavock_weapons:sword_iron", 3, 1, 1 },
 	{ "scavock_weapons:spear_iron", 3, 1, 1 },
 	{ "scavock_weapons:bow", 3, 1, 1 },
+	{ "scavock_death:medkit", 8, 1, 2 },
+	{ "scavock_death:stabiliser", 3, 1, 1 },
 	{ "scavock_core:titanium_ingot", 1, 1, 1 },
 }
 local TOTAL_WEIGHT = 0

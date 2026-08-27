@@ -393,6 +393,30 @@ def hotbar_selected():
     return px
 add("scavock_player", "scavock_hotbar_selected", hotbar_selected)
 
+# ---------- medical (§12 revives) ----------
+def medkit():
+    px = blank()
+    for y in range(4, 12):
+        for x in range(2, 14):
+            px[y][x] = (*BONE, 255)
+    for y in range(6, 10):
+        for x in range(7, 9):
+            px[y][x] = (179, 58, 36, 255)
+    for x in range(6, 10):
+        for y in range(7, 9):
+            px[y][x] = (179, 58, 36, 255)
+    return px
+add("scavock_death", "scavock_medkit", medkit)
+def stabiliser():
+    px = blank()
+    for i in range(3, 12):
+        px[SIZE - 1 - i][i] = (*BONE, 255)
+        px[SIZE - 2 - i][i] = (*BONE, 255)
+    px[3][12] = (170, 170, 175, 255); px[2][13] = (170, 170, 175, 255)
+    px[12][2] = (179, 58, 36, 255); px[11][3] = (179, 58, 36, 255)
+    return px
+add("scavock_death", "scavock_stabiliser", stabiliser)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

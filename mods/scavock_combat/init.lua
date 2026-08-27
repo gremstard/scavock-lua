@@ -54,7 +54,7 @@ core.register_globalstep(function()
 		local name = player:get_player_name()
 		local s = st(name)
 		local ctrl = player:get_player_control()
-		if ctrl.place and not s.was_place then
+		if ctrl.place and not s.was_place and not scavock.downed[name] then
 			local stats = weapon_form(player:get_wielded_item():get_name())
 			if stats and now >= s.lock_until then
 				local window = stats.window
@@ -99,6 +99,11 @@ end
 core.register_on_punchplayer(function(player, hitter, time_from_last_punch,
 		tool_capabilities, dir, damage)
 	if damage <= 0 then return end
+	-- a downed attacker can't fight (§12)
+	if hitter and hitter:is_player()
+			and scavock.downed[hitter:get_player_name()] then
+		return true
+	end
 	local name = player:get_player_name()
 	local now = core.get_us_time() / 1e6
 	local s = st(name)

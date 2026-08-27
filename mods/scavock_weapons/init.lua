@@ -152,6 +152,7 @@ core.register_entity("scavock_weapons:arrow_entity", {
 
 local function shoot(itemstack, user)
 	if not user or not user:is_player() then return itemstack end
+	if scavock.downed[user:get_player_name()] then return itemstack end
 	local inv = user:get_inventory()
 	if not inv:contains_item("main", "scavock_weapons:arrow") then
 		core.chat_send_player(user:get_player_name(), "No arrows in your backpack.")

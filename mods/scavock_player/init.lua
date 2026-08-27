@@ -75,6 +75,10 @@ core.register_globalstep(function(dtime)
 		if scavock.stagger_mult then
 			mult = mult * scavock.stagger_mult(name)
 		end
+		-- downed (scavock_death, §12): crawling pace
+		if scavock.crawl_mult then
+			mult = mult * scavock.crawl_mult(name)
+		end
 		local prev = sprint_state[name]
 		if not prev or math.abs(prev - mult) > 0.01 then
 			sprint_state[name] = mult

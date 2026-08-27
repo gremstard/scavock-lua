@@ -142,7 +142,7 @@ local function channel_tick(name)
 	local ch = channels[name]
 	if not ch then return end
 	local player = core.get_player_by_name(name)
-	if not player or player:get_hp() <= 0 then
+	if not player or player:get_hp() <= 0 or scavock.downed[name] then
 		channels[name] = nil
 		return
 	end
@@ -178,6 +178,10 @@ core.register_node("scavock_evac:beacon", {
 	on_rightclick = function(pos, node, clicker)
 		local name = clicker:get_player_name()
 		if channels[name] then return end
+		if scavock.downed[name] then
+			core.chat_send_player(name, "You can't call an evac while downed.")
+			return
+		end
 		local meta = core.get_meta(pos)
 		local now = math.floor(core.get_gametime())
 		local until_t = meta:get_int("cooldown_until")
