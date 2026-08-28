@@ -16,6 +16,8 @@
 
 local CRAWL_MULT = 0.12
 local REVIVE_RADIUS = 3
+local BLEEDOUT = 90        -- §12 required: downed players eventually die
+local SELF_REVIVE_TIME = 8 -- §12: slow and interruptible by damage
 
 -- §12 revive table. Channel seconds are tuning (doc gives relative speeds).
 local REVIVES = {
@@ -24,7 +26,7 @@ local REVIVES = {
 	stabiliser = { hp_pct = 0.30, time = 2, item = "scavock_death:stabiliser" },
 }
 
--- name -> { hud_ids = {...}, had_interact = bool }
+-- name -> { hud_ids = {...}, had_interact = bool, bleedout, selfrev }
 local downed_data = {}
 -- target name -> { reviver, kind, t }
 local revives = {}
@@ -66,7 +68,8 @@ local function set_downed(player, on)
 	if on then
 		scavock.downed[name] = true
 		local privs = core.get_player_privs(name)
-		downed_data[name] = { had_interact = privs.interact and true or false }
+		downed_data[name] = { had_interact = privs.interact and true or false,
+			bleedout = BLEEDOUT }
 		privs.interact = nil
 		core.set_player_privs(name, privs)
 		if scavock.refresh_jump then
@@ -181,6 +184,71 @@ core.register_on_joinplayer(function(player)
 end)
 
 -- ---------------------------------------------------------------------------
+-- Bleedout (§12 required mechanism 1) and self-revive (§12 mechanism 2:
+-- the upgraded stabiliser, held in hand while downed — slow, interruptible)
+-- ---------------------------------------------------------------------------
+core.register_craftitem("scavock_death:stabiliser_adv", {
+	description = "Upgraded Stabiliser" .. "\n"
+		.. "On others: fast revive. On yourself: the ONLY self-revive"
+		.. " — hold it while downed.",
+	inventory_image = "scavock_stabiliser_adv.png",
+})
+core.register_craft({
+	type = "shapeless",
+	output = "scavock_death:stabiliser_adv",
+	recipe = { "scavock_death:stabiliser", "scavock_core:titanium_ingot" },
+})
+
+local bleed_tick = 0
+core.register_globalstep(function(dtime)
+	bleed_tick = bleed_tick + dtime
+	if bleed_tick < 1 then return end
+	local step = bleed_tick
+	bleed_tick = 0
+	for name in pairs(scavock.downed) do
+		local player = core.get_player_by_name(name)
+		local data = downed_data[name]
+		if player and data then
+			data.bleedout = (data.bleedout or BLEEDOUT) - step
+			if data.bleedout <= 0 then
+				player:set_hp(0, { type = "set_hp", from = "mod" })
+			elseif data.hud_ids and data.hud_ids[2] then
+				local msg
+				-- self-revive: hold the upgraded stabiliser
+				if player:get_wielded_item():get_name()
+						== "scavock_death:stabiliser_adv"
+						and not revives[name] then
+					data.selfrev = (data.selfrev or SELF_REVIVE_TIME) - step
+					if data.selfrev <= 0 then
+						player:get_inventory():remove_item("main",
+							"scavock_death:stabiliser_adv")
+						local hp_max = player:get_properties().hp_max or 20
+						set_downed(player, false)
+						player:set_hp(math.max(1, math.floor(hp_max * 0.3)),
+							{ type = "set_hp", from = "mod" })
+						core.chat_send_player(name, "Back up. That was the spare.")
+						return
+					end
+					msg = ("Self-revive in %d... stay still, don't get hit.")
+						:format(math.ceil(data.selfrev))
+				else
+					data.selfrev = nil
+					msg = ("Crawl to cover. Bleeding out in %ds.")
+						:format(math.ceil(data.bleedout))
+				end
+				player:hud_change(data.hud_ids[2], "text", msg)
+			end
+		end
+	end
+end)
+
+-- damage interrupts a self-revive
+core.register_on_punchplayer(function(player)
+	local data = downed_data[player:get_player_name()]
+	if data then data.selfrev = nil end
+end)
+
+-- ---------------------------------------------------------------------------
 -- Revives: right-click a downed player
 -- ---------------------------------------------------------------------------
 local function revive_tick(target_name)
@@ -228,7 +296,8 @@ core.register_on_rightclickplayer(function(player, clicker)
 
 	local wield = clicker:get_wielded_item():get_name()
 	local kind = "bare"
-	if wield == "scavock_death:stabiliser" then
+	if wield == "scavock_death:stabiliser"
+			or wield == "scavock_death:stabiliser_adv" then
 		kind = "stabiliser"
 	elseif wield == "scavock_death:medkit" then
 		kind = "medkit"

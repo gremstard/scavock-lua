@@ -625,6 +625,33 @@ def lockplate():
     return px
 add("scavock_gear", "scavock_lockplate", lockplate)
 
+# ---------- world (§12 beds, corpses, safe zones) ----------
+def bed_top():
+    px = noise_fill((122, 60, 48), 8, R("bed"))
+    for y in range(0, 5):
+        for x in range(SIZE):
+            px[y][x] = (228, 224, 212, 255)
+    return px
+add("scavock_world", "scavock_bed_top", bed_top)
+add("scavock_world", "scavock_bed_side", lambda: noise_fill((100, 72, 40), 8, R("bedside")))
+def corpse_tex():
+    px = noise_fill((70, 74, 82), 8, R("corpse"))
+    return speckle(px, (110, 100, 90), 8, R("corpsesp"), 2)
+add("scavock_world", "scavock_corpse", corpse_tex)
+def safezone_core():
+    px = noise_fill((60, 64, 70), 6, R("sz"))
+    return blob(px, 8, 8, 4, (228, 224, 212))
+add("scavock_world", "scavock_safezone", safezone_core)
+def stab_adv():
+    px = blank()
+    for i in range(3, 12):
+        px[SIZE - 1 - i][i] = (*BONE, 255)
+        px[SIZE - 2 - i][i] = (*BONE, 255)
+    px[3][12] = (170, 186, 205, 255); px[2][13] = (170, 186, 205, 255)
+    px[12][2] = (182, 214, 46, 255); px[11][3] = (182, 214, 46, 255)
+    return px
+add("scavock_death", "scavock_stabiliser_adv", stab_adv)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

@@ -223,6 +223,13 @@ local function try_spawn(pos, entity, cap)
 	if core.get_node(above).name ~= "air" then return end
 	local _, dist = nearest_player(pos, 48)
 	if not dist or dist < 12 then return end
+	-- §12/§14: safe zones spawn no creatures; lit interiors are mob-proof
+	if scavock.in_safe_zone and scavock.in_safe_zone(pos) then return end
+	local light = core.get_node_light({ x = pos.x, y = pos.y + 1, z = pos.z }, nil)
+	if light and light > 11 and core.get_node_light(
+			{ x = pos.x, y = pos.y + 1, z = pos.z }, 0.5) ~= light then
+		-- artificial light (brighter than the sun would make it): no spawn
+		return end
 	if count_creatures_near(pos, 24) >= cap then return end
 	core.add_entity({ x = pos.x, y = pos.y + 1.5, z = pos.z },
 		"scavock_creatures:" .. entity)
