@@ -184,8 +184,7 @@ local function try_open(pos, player)
 		else
 			core.chat_send_player(name, "No luck. (Practice helps.)")
 			if math.random(2) == 1 then
-				local inv = player2:get_inventory()
-				inv:remove_item("main", "scavock_locks:lockpick")
+				scavock.p_take(player2, "scavock_locks:lockpick")
 				core.chat_send_player(name, "The pick snapped.")
 			end
 		end
@@ -294,15 +293,20 @@ core.register_node("scavock_locks:cracked", {
 -- meta formspec, so open containers through a nodemeta: formspec instead.
 local function show_container(pos, player, w, h, label)
 	local loc = ("nodemeta:%d,%d,%d"):format(pos.x, pos.y, pos.z)
-	local rows = math.ceil(h)
+	local hands = "detached:scavock_hands_" .. player:get_player_name()
+	local y = 1.0 + h * 1.25 + 0.3
 	core.show_formspec(player:get_player_name(), "scavock_locks:open",
 		table.concat({
 			"formspec_version[6]",
-			("size[10.7,%f]"):format(2.0 + rows * 1.25 + 7.9),
+			("size[12.0,%f]"):format(y + 2.1 + 4.4),
 			("label[0.4,0.5;%s]"):format(core.formspec_escape(label)),
 			("list[%s;main;0.4,0.9;%d,%d;]"):format(loc, w, h),
-			("list[current_player;main;0.4,%f;8,6;]"):format(1.4 + rows * 1.25),
+			("label[0.4,%f;HOTBAR]"):format(y),
+			("list[current_player;main;0.4,%f;4,1;]"):format(y + 0.25),
+			("label[0.4,%f;HANDS]"):format(y + 1.75),
+			("list[%s;main;0.4,%f;9,3;]"):format(hands, y + 2.0),
 			("listring[%s;main]"):format(loc),
+			("listring[%s;main]"):format(hands),
 			"listring[current_player;main]",
 		}))
 end

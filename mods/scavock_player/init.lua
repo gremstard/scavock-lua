@@ -45,18 +45,24 @@ end)
 local sprint_state = {}
 
 local function weight_mult(player)
-	-- occupied grid cells stand in for carried weight (§7: weight is a speed
-	-- disadvantage only; capacity is already the grid's job)
-	local inv = player:get_inventory()
-	local size = inv:get_size("main")
-	local cells = 0
-	for i = 1, size do
-		local st = inv:get_stack("main", i)
-		if not st:is_empty() then
-			local isz = scavock.item_size(st:get_name())
-			cells = cells + isz.w * isz.h
+	-- occupied cells across hotbar + hands + garment grids stand in for
+	-- carried weight (§7: weight slows, the grids cap)
+	if not (scavock.p_each and scavock_grid) then return 1 end
+	local cells, size = 0, 0
+	for _, id in ipairs(scavock_grid.carried_grids(player)) do
+		local inv, list = scavock_grid.get_grid(player, id)
+		if inv then
+			size = size + inv:get_size(list)
+			for i = 1, inv:get_size(list) do
+				local st = inv:get_stack(list, i)
+				if not st:is_empty() then
+					local isz = scavock.item_size(st:get_name())
+					cells = cells + isz.w * isz.h
+				end
+			end
 		end
 	end
+	if size == 0 then return 1 end
 	local frac = math.min(cells / size, 1)
 	return 1 - (1 - MIN_WEIGHT_MULT) * frac
 end
@@ -107,21 +113,12 @@ core.register_on_dieplayer(function(player)
 	local name = player:get_player_name()
 	if scavock.suppress_drop and scavock.suppress_drop[name] then
 		-- swallowed by a Man Eater (§24.5): loot destroyed, no drops
-		player:get_inventory():set_list("main", {})
+		scavock.clear_all_carried(player)
 		core.after(0, function() scavock.suppress_drop[name] = nil end)
 		return
 	end
 	local pos = player:get_pos()
-	local inv = player:get_inventory()
-	for i = 1, inv:get_size("main") do
-		local stack = inv:get_stack("main", i)
-		if not stack:is_empty() then
-			local p = vector.add(pos, {
-				x = math.random() - 0.5, y = 0.5, z = math.random() - 0.5 })
-			core.add_item(p, stack)
-			inv:set_stack("main", i, ItemStack(""))
-		end
-	end
+	scavock.drop_all_carried(player, pos)
 	core.chat_send_player(player:get_player_name(),
 		"Knocked out. Everything you carried is on the ground where you fell. "
 		.. "Your vault and extraction stash are untouched.")

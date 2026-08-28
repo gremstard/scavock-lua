@@ -181,17 +181,14 @@ core.register_globalstep(function(dtime)
 	tick = 0
 	for _, player in ipairs(core.get_connected_players()) do
 		local name = player:get_player_name()
-		local inv = player:get_inventory()
 		local compass_meta
-		for i = 1, inv:get_size("main") do
-			local st = inv:get_stack("main", i)
+		scavock.p_each(player, function(inv, list, i, st)
+			if compass_meta then return end
 			if st:get_name():find("^scavock_compass:")
 					or st:get_name() == "scavock_under:compass_cavock" then
 				compass_meta = st:get_meta()
-				-- write-back below only matters for continuity switches
 				local pos, spin = scavock_compass.resolve(compass_meta,
 					player:get_pos())
-				inv:set_stack("main", i, st)
 				if spin or not pos then
 					pos = vector.add(player:get_pos(), {
 						x = math.random(-9, 9), y = 0, z = math.random(-9, 9) })
@@ -205,9 +202,9 @@ core.register_globalstep(function(dtime)
 						precision = 0,
 					})
 				end
-				break
+				return st
 			end
-		end
+		end)
 		if not compass_meta and huds[name] then
 			player:hud_remove(huds[name])
 			huds[name] = nil

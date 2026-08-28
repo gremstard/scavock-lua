@@ -34,7 +34,7 @@ local TIERS = {
 local PERKS = {
 	speed   = { desc = "Speed (+15% move)",        element = "scavock_gear:feather" },
 	jump    = { desc = "Jump (+25% height)",       element = "scavock_gear:spring" },
-	storage = { desc = "Storage (+1 pack row)",    element = "scavock_gear:strap" },
+	storage = { desc = "Storage (adds a 3x2 pocket)", element = "scavock_gear:strap" },
 	safe    = { desc = "Safe Slot (survives death)", element = "scavock_gear:lockplate" },
 }
 
@@ -91,17 +91,11 @@ function scavock_gear.on_equip_changed(player)
 	if not inv then return end
 	save_equip(player, inv)
 
-	-- §10: backpack (and layers) determine grid dimensions
-	local rows = 3
-	if not equipped(player, "top"):is_empty() then rows = rows + 1 end
-	if not equipped(player, "vest"):is_empty() then rows = rows + 1 end
-	local bp = equipped(player, "backpack"):get_name()
-	if bp == "scavock_gear:backpack_s" then rows = rows + 1
-	elseif bp == "scavock_gear:backpack_l" then rows = rows + 2 end
-	local reinf = equipped(player, "reinf")
-	if reinf:get_meta():get_string("perk") == "storage" then rows = rows + 1 end
-	scavock_grid.set_rows(player, rows)
+	-- §10 v2: storage garments carry their OWN labeled grids (Hands is
+	-- the base); scavock_grid materialises/dumps them from equip state
+	scavock_grid.refresh_garments(player)
 
+	local reinf = equipped(player, "reinf")
 	speed_perk[name] =
 		(reinf:get_meta():get_string("perk") == "speed") and 1.15 or 1.0
 	scavock.refresh_jump(player)
@@ -206,14 +200,13 @@ for ti, tier in ipairs(TIERS) do
 			if meta:get_int("broken") ~= 1 and meta:get_int("pool") >= tier.cap then
 				return itemstack
 			end
-			local inv = user:get_inventory()
 			local need = tier.mat .. " 2"
-			if not inv:contains_item("main", need) then
+			if not scavock.p_contains(user, need) then
 				core.chat_send_player(user:get_player_name(),
 					"Repair needs 2x " .. tier.desc .. " material.")
 				return itemstack
 			end
-			inv:remove_item("main", need)
+			scavock.p_take(user, need)
 			meta:set_int("pool", tier.cap)
 			meta:set_int("broken", 0)
 			meta:set_string("description",
@@ -278,13 +271,14 @@ core.register_craft({ output = "scavock_core:chain_link 4",
 -- ---------------------------------------------------------------------------
 -- Clothing items (§10)
 -- ---------------------------------------------------------------------------
-local function clothing(id, slot, desc, image, size, recipe)
+local function clothing(id, slot, desc, image, size, recipe, storage)
 	local itemname = "scavock_gear:" .. id
 	core.register_craftitem(itemname, {
 		description = desc,
 		inventory_image = image,
 		groups = { scavock_slot = SLOT[slot], clothing = 1 },
 		stack_max = 1,
+		_scavock_storage = storage,
 	})
 	if size then scavock.item_sizes[itemname] = size end
 	if recipe then
@@ -299,19 +293,21 @@ clothing("glasses", "glasses", "Field Glasses (enables zoom)", "scavock_glasses.
 	nil, { "scavock_core:scrap_ingot", "scavock_core:coal_lump" })
 clothing("scarf", "scarf", "Scarf (-5% damage)", "scavock_scarf.png",
 	nil, { L, "scavock_core:stick" })
-clothing("shirt", "top", "Shirt (+1 pack row)", "scavock_shirt.png",
-	{ 2, 2 }, { L, L, "scavock_core:stick" })
-clothing("vest", "vest", "Vest (+1 pack row)", "scavock_vest.png",
-	{ 2, 2 }, { L, L, L })
-clothing("shorts", "bottoms", "Shorts (what you spawn in)", "scavock_shorts.png",
-	{ 2, 1 }, nil)
-clothing("pants", "bottoms", "Pants", "scavock_pants.png",
-	{ 2, 2 }, { L, L, L, "scavock_core:stick" })
-clothing("backpack_s", "backpack", "Small Backpack (+1 pack row)",
-	"scavock_backpack_s.png", { 2, 2 }, { L, L, "scavock_gear:strap" })
-clothing("backpack_l", "backpack", "Large Backpack (+2 pack rows)",
+clothing("shirt", "top", "Worn Shirt\nStorage: 3x2", "scavock_shirt.png",
+	{ 2, 2 }, { L, L, "scavock_core:stick" }, { w = 3, h = 2 })
+clothing("vest", "vest", "Scav Vest\nStorage: 4x2", "scavock_vest.png",
+	{ 2, 2 }, { L, L, L }, { w = 4, h = 2 })
+clothing("shorts", "bottoms", "Shorts\nWhat you spawn in. Storage: 2x2",
+	"scavock_shorts.png", { 2, 1 }, nil, { w = 2, h = 2 })
+clothing("pants", "bottoms", "Brown Cargo Pants\nStorage: 4x4",
+	"scavock_pants.png", { 2, 2 }, { L, L, L, "scavock_core:stick" },
+	{ w = 4, h = 4 })
+clothing("backpack_s", "backpack", "Small Backpack\nStorage: 6x3",
+	"scavock_backpack_s.png", { 2, 2 }, { L, L, "scavock_gear:strap" },
+	{ w = 6, h = 3 })
+clothing("backpack_l", "backpack", "Large Backpack\nStorage: 8x4",
 	"scavock_backpack_l.png", { 2, 3 },
-	{ L, L, L, "scavock_gear:strap", "scavock_gear:strap" })
+	{ L, L, L, "scavock_gear:strap", "scavock_gear:strap" }, { w = 8, h = 4 })
 clothing("shoes", "shoes", "Boots (-50% fall damage)", "scavock_shoes.png",
 	{ 2, 1 }, { L, L, "scavock_core:chain_link" })
 
@@ -368,7 +364,8 @@ core.register_on_joinplayer(function(player)
 		for i = 1, inv:get_size("main") do
 			inv:set_stack("main", i, ItemStack(list[i] or ""))
 		end
-	elseif not player:get_inventory():is_empty("main") then
+	elseif player:get_meta():get_string("scavock_hands") ~= ""
+			or not player:get_inventory():is_empty("main") then
 		-- legacy save from before clothing existed: grant the set that keeps
 		-- their 8x6 pack intact ("you were carrying it all along")
 		inv:set_stack("main", SLOT.bottoms, ItemStack("scavock_gear:shorts"))

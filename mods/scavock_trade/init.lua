@@ -45,24 +45,24 @@ core.register_craftitem("scavock_trade:credit", {
 })
 
 local function credits_of(player)
-	local inv = player:get_inventory()
 	local total = 0
-	for i = 1, inv:get_size("main") do
-		local st = inv:get_stack("main", i)
+	scavock.p_each(player, function(inv, list, i, st)
 		if st:get_name() == "scavock_trade:credit" then
 			total = total + st:get_count()
 		end
-	end
+	end)
 	return total
 end
 
 local function take_credits(player, n)
-	return player:get_inventory():remove_item("main",
-		"scavock_trade:credit " .. n):get_count() == n
+	if not scavock.p_contains(player, "scavock_trade:credit " .. n) then
+		return false
+	end
+	return scavock.p_take(player, "scavock_trade:credit " .. n)
 end
 
 local function give(player, itemstring)
-	local leftover = player:get_inventory():add_item("main", itemstring)
+	local leftover = scavock.p_add(player, itemstring)
 	if not leftover:is_empty() then
 		core.add_item(player:get_pos(), leftover)
 	end

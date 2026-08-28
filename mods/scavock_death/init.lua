@@ -152,14 +152,8 @@ core.register_on_leaveplayer(function(player)
 	-- you back up at 1 HP and delete the finish-or-spare decision.
 	if scavock.downed[name] then
 		local pos = player:get_pos()
-		local inv = player:get_inventory()
-		for i = 1, inv:get_size("main") do
-			local stack = inv:get_stack("main", i)
-			if not stack:is_empty() then
-				core.add_item(vector.add(pos, {
-					x = math.random() - 0.5, y = 0.5, z = math.random() - 0.5 }), stack)
-				inv:set_stack("main", i, ItemStack(""))
-			end
+		if scavock.drop_all_carried then
+			scavock.drop_all_carried(player, pos)
 		end
 		if scavock.drop_equipment then
 			scavock.drop_equipment(player, pos)
@@ -220,8 +214,7 @@ core.register_globalstep(function(dtime)
 						and not revives[name] then
 					data.selfrev = (data.selfrev or SELF_REVIVE_TIME) - step
 					if data.selfrev <= 0 then
-						player:get_inventory():remove_item("main",
-							"scavock_death:stabiliser_adv")
+						scavock.p_take(player, "scavock_death:stabiliser_adv")
 						local hp_max = player:get_properties().hp_max or 20
 						set_downed(player, false)
 						player:set_hp(math.max(1, math.floor(hp_max * 0.3)),
@@ -275,7 +268,7 @@ local function revive_tick(target_name)
 	-- success
 	local kind = REVIVES[r.kind]
 	if kind.item then
-		reviver:get_inventory():remove_item("main", kind.item)
+		scavock.p_take(reviver, kind.item)
 	end
 	revives[target_name] = nil
 	set_downed(target, false)

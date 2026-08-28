@@ -191,25 +191,21 @@ core.register_entity("scavock_weapons:arrow_entity", {
 local function shoot(itemstack, user)
 	if not user or not user:is_player() then return itemstack end
 	if scavock.downed[user:get_player_name()] then return itemstack end
-	local inv = user:get_inventory()
-	-- the FIRST arrow stack in the pack (anchor order) is nocked — arrange
-	-- your grid to choose what flies (§9 the grid is a decision surface)
-	local effect, found_idx
-	for i = 1, inv:get_size("main") do
-		local st = inv:get_stack("main", i)
-		if core.get_item_group(st:get_name(), "scavock_arrow") > 0 then
-			found_idx = i
+	-- the FIRST arrow stack found (hotbar, then Hands, then garments, in
+	-- anchor order) is nocked — arrange your grids to choose what flies
+	local effect, found
+	scavock.p_each(user, function(pinv, list, i, st)
+		if not found and core.get_item_group(st:get_name(), "scavock_arrow") > 0 then
+			found = true
 			effect = st:get_name():match("^scavock_weapons:arrow_(%a+)$")
-			break
+			st:take_item()
+			return st
 		end
-	end
-	if not found_idx then
-		core.chat_send_player(user:get_player_name(), "No arrows in your backpack.")
+	end)
+	if not found then
+		core.chat_send_player(user:get_player_name(), "No arrows on you.")
 		return itemstack
 	end
-	local st = inv:get_stack("main", found_idx)
-	st:take_item()
-	inv:set_stack("main", found_idx, st)
 
 	local pos = vector.add(user:get_pos(), { x = 0, y = 1.5, z = 0 })
 	local dir = user:get_look_dir()

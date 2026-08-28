@@ -186,7 +186,7 @@ core.register_craftitem("scavock_boom:trigger_bomb", {
 		button:get_meta():set_string("link", link)
 		button:get_meta():set_string("description",
 			"Trigger Button (linked)\nDetonates within " .. TRIGGER_RANGE .. " blocks.")
-		local leftover = placer:get_inventory():add_item("main", button)
+		local leftover = scavock.p_add(placer, button)
 		if not leftover:is_empty() then
 			core.add_item(placer:get_pos(), leftover)
 		end
@@ -234,8 +234,8 @@ core.register_node("scavock_boom:placed_bomb", {
 				core.remove_node(pos)
 				local player = core.get_player_by_name(name)
 				if player then
-					player:get_inventory():add_item("main", "scavock_boom:grenade")
-					player:get_inventory():add_item("main", "scavock_boom:sensor")
+					scavock.p_add(player, "scavock_boom:grenade")
+					scavock.p_add(player, "scavock_boom:sensor")
 					core.chat_send_player(name, "Disarmed — parts recovered.")
 				end
 			end
@@ -286,8 +286,7 @@ core.register_craftitem("scavock_boom:trigger_button", {
 			return itemstack
 		end
 		-- consumed on use, partial refund (§16)
-		local inv = user:get_inventory()
-		inv:add_item("main", "scavock_boom:button")
+		scavock.p_add(user, "scavock_boom:button")
 		return ItemStack("")
 	end,
 })

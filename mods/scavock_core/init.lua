@@ -364,16 +364,24 @@ core.register_craft({ type = "fuel", recipe = "scavock_core:stick", burntime = 2
 -- ---------------------------------------------------------------------------
 -- Workbench: the only 3x3 craft surface (§6 "workbench tools" gate)
 -- ---------------------------------------------------------------------------
-local wb_formspec = table.concat({
-	"formspec_version[6]", "size[10.7,12.1]",
-	"label[0.4,0.5;Workbench]",
-	"list[context;craft;0.4,0.9;3,3;]",
-	"image[4.5,2.2;0.8,0.8;scavock_stick.png^[transformR270]",
-	"list[context;output;5.6,2.2;1,1;]",
-	"list[current_player;main;0.4,5.4;8,6;]",
-	"listring[context;craft]", "listring[current_player;main]",
-	"listring[context;output]", "listring[current_player;main]",
-})
+local function wb_formspec(pos, player_name)
+	local loc = ("nodemeta:%d,%d,%d"):format(pos.x, pos.y, pos.z)
+	local hands = "detached:scavock_hands_" .. player_name
+	return table.concat({
+		"formspec_version[6]", "size[10.7,11.4]",
+		"label[0.4,0.5;Workbench]",
+		("list[%s;craft;0.4,0.9;3,3;]"):format(loc),
+		"image[4.5,2.2;0.8,0.8;scavock_stick.png^[transformR270]",
+		("list[%s;output;5.6,2.2;1,1;]"):format(loc),
+		"label[0.4,5.0;HOTBAR]",
+		"list[current_player;main;0.4,5.3;4,1;]",
+		"label[0.4,6.8;HANDS]",
+		("list[%s;main;0.4,7.1;9,3;]"):format(hands),
+		("listring[%s;craft]"):format(loc), ("listring[%s;main]"):format(hands),
+		("listring[%s;output]"):format(loc), ("listring[%s;main]"):format(hands),
+		"listring[current_player;main]",
+	})
+end
 
 local function wb_update_output(pos)
 	local inv = core.get_meta(pos):get_inventory()
@@ -396,11 +404,14 @@ core.register_node("scavock_core:workbench", {
 	groups = { choppy = 2, oddly_breakable_by_hand = 2 },
 	on_construct = function(pos)
 		local meta = core.get_meta(pos)
-		meta:set_string("formspec", wb_formspec)
 		meta:set_string("infotext", "Workbench")
 		local inv = meta:get_inventory()
 		inv:set_size("craft", 9)
 		inv:set_size("output", 1)
+	end,
+	on_rightclick = function(pos, node, clicker)
+		core.show_formspec(clicker:get_player_name(), "scavock_core:workbench",
+			wb_formspec(pos, clicker:get_player_name()))
 	end,
 	can_dig = function(pos)
 		return core.get_meta(pos):get_inventory():is_empty("craft")
@@ -439,25 +450,32 @@ core.register_node("scavock_core:workbench", {
 -- ---------------------------------------------------------------------------
 -- Furnace (compact node-timer implementation)
 -- ---------------------------------------------------------------------------
-local function furnace_formspec(fuel_pct, item_pct)
+local function furnace_formspec(pos, player_name, fuel_pct, item_pct)
+	local loc = ("nodemeta:%d,%d,%d"):format(pos.x, pos.y, pos.z)
+	local hands = "detached:scavock_hands_" .. player_name
 	return table.concat({
-		"formspec_version[6]", "size[10.7,12.1]",
+		"formspec_version[6]", "size[10.7,11.4]",
 		"label[0.4,0.5;Furnace]",
-		"list[context;src;3.2,0.9;1,1;]",
+		("list[%s;src;3.2,0.9;1,1;]"):format(loc),
 		"label[3.25,2.6;Fuel " .. ("%d%%"):format(fuel_pct) .. "]",
-		"list[context;fuel;3.2,3.3;1,1;]",
+		("list[%s;fuel;3.2,3.3;1,1;]"):format(loc),
 		"label[4.9,2.05;→ " .. ("%d%%"):format(item_pct) .. "]",
-		"list[context;dst;5.9,1.5;2,2;]",
-		"list[current_player;main;0.4,5.4;8,6;]",
-		"listring[context;dst]", "listring[current_player;main]",
-		"listring[context;src]", "listring[current_player;main]",
-		"listring[context;fuel]", "listring[current_player;main]",
+		("list[%s;dst;5.9,1.5;2,2;]"):format(loc),
+		"label[0.4,5.0;HOTBAR]",
+		"list[current_player;main;0.4,5.3;4,1;]",
+		"label[0.4,6.8;HANDS]",
+		("list[%s;main;0.4,7.1;9,3;]"):format(hands),
+		("listring[%s;dst]"):format(loc), ("listring[%s;main]"):format(hands),
+		("listring[%s;src]"):format(loc), ("listring[%s;main]"):format(hands),
+		("listring[%s;fuel]"):format(loc), ("listring[%s;main]"):format(hands),
+		"listring[current_player;main]",
 	})
 end
 
 local function furnace_set(pos, active, fuel_pct, item_pct)
 	local meta = core.get_meta(pos)
-	meta:set_string("formspec", furnace_formspec(fuel_pct, item_pct))
+	meta:set_int("fuel_pct", fuel_pct)
+	meta:set_int("item_pct", item_pct)
 	meta:set_string("infotext", active and "Furnace (active)" or "Furnace")
 	local want = active and "scavock_core:furnace_active" or "scavock_core:furnace"
 	local node = core.get_node(pos)
@@ -551,6 +569,12 @@ local furnace_def = {
 	end,
 	on_metadata_inventory_take = function(pos)
 		core.get_node_timer(pos):start(1.0)
+	end,
+	on_rightclick = function(pos, node, clicker)
+		local meta = core.get_meta(pos)
+		core.show_formspec(clicker:get_player_name(), "scavock_core:furnace",
+			furnace_formspec(pos, clicker:get_player_name(),
+				meta:get_int("fuel_pct"), meta:get_int("item_pct")))
 	end,
 	on_timer = furnace_timer,
 }

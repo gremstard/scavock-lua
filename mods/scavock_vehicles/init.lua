@@ -339,7 +339,7 @@ core.register_tool("scavock_vehicles:rod", {
 				return
 			end
 			if math.random(3) > 1 then
-				p:get_inventory():add_item("main", "scavock_vehicles:fish")
+				scavock.p_add(p, "scavock_vehicles:fish")
 				core.chat_send_player(name, "A bite — fish landed.")
 			else
 				core.chat_send_player(name, "Nothing. Cast again.")

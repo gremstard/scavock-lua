@@ -12,7 +12,11 @@ local function swallow(self, player, heal_cap)
 	local name = player:get_player_name()
 	-- inventory destroyed, not dropped (§24.5 confirmed)
 	scavock.suppress_drop[name] = true
-	player:get_inventory():set_list("main", {})
+	if scavock.clear_all_carried then
+		scavock.clear_all_carried(player)
+	else
+		player:get_inventory():set_list("main", {})
+	end
 	player:set_hp(0, { type = "set_hp", from = "mod" })
 	core.chat_send_player(name, "Swallowed whole. Nothing of yours remains.")
 	-- growing by eating: level up, heal, capped at 3 meals

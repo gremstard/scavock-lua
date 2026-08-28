@@ -72,14 +72,20 @@ end)
 
 local function storage_formspec(player_name, kind, size, label, note)
 	local list_h = size.h * 1.25 + 0.15
+	local y = 1.4 + list_h + 0.4
 	return table.concat({
-		"formspec_version[6]", ("size[10.7,%f]"):format(1.4 + list_h + 7.9 + 0.5),
+		"formspec_version[6]", ("size[12.0,%f]"):format(y + 6.6),
 		"label[0.4,0.5;", label, "]",
 		"label[0.4,1.0;", note, "]",
 		("list[detached:scavock_%s_%s;main;0.4,1.4;%d,%d;]")
 			:format(kind, player_name, size.w, size.h),
-		("list[current_player;main;0.4,%f;8,6;]"):format(1.4 + list_h + 0.4),
+		("label[0.4,%f;HOTBAR]"):format(y),
+		("list[current_player;main;0.4,%f;4,1;]"):format(y + 0.25),
+		("label[0.4,%f;HANDS]"):format(y + 1.75),
+		("list[detached:scavock_hands_%s;main;0.4,%f;9,3;]")
+			:format(player_name, y + 2.0),
 		("listring[detached:scavock_%s_%s;main]"):format(kind, player_name),
+		("listring[detached:scavock_hands_%s;main]"):format(player_name),
 		"listring[current_player;main]",
 	})
 end
@@ -110,15 +116,12 @@ local function bank_inventory(player)
 	local stash = core.get_inventory({ type = "detached", name = "scavock_stash_" .. name })
 	if not stash then return 0, 0 end
 	local moved, left = 0, 0
-	for i = 1, inv:get_size("main") do
-		local stack = inv:get_stack("main", i)
-		if not stack:is_empty() then
-			local rest = stash:add_item("main", stack)
-			inv:set_stack("main", i, rest)
-			moved = moved + stack:get_count() - rest:get_count()
-			left = left + rest:get_count()
-		end
-	end
+	scavock.p_each(player, function(pinv, list, i, stack)
+		local rest = stash:add_item("main", stack)
+		moved = moved + stack:get_count() - rest:get_count()
+		left = left + rest:get_count()
+		return rest
+	end)
 	save_list(player, "stash", stash)
 	return moved, left
 end
