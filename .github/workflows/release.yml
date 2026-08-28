@@ -54,7 +54,20 @@ jobs:
           mkdir -p "$APP/Contents/Resources/games/scavock"
           rsync -a --exclude .git --exclude .github game/ "$APP/Contents/Resources/games/scavock/"
           codesign --force --deep -s - "$APP"
-          ditto -c -k --keepParent "$APP" Scavock-macOS.zip
+          mkdir pkg
+          cp -R "$APP" pkg/
+          cat > "pkg/Open Me First.command" <<'HELPER'
+          #!/bin/bash
+          # Unsigned pre-release: macOS quarantines downloads and calls them
+          # "damaged". This clears the flag for the app next to this file.
+          cd "$(dirname "$0")"
+          xattr -cr scavock.app
+          echo "Cleared. Launching Scavock..."
+          open scavock.app
+          HELPER
+          chmod +x "pkg/Open Me First.command"
+          printf 'SCAVOCK — macOS\n1. Double-click "Open Me First.command" (right-click -> Open if blocked).\n2. Then open scavock.app normally.\nEquivalent: xattr -cr scavock.app\n' > pkg/README.txt
+          (cd pkg && zip -qry ../Scavock-macOS.zip .)
 
       - name: Smoke test
         run: |
