@@ -223,6 +223,8 @@ core.register_node("scavock_core:debris", {
 		max_items = 2,
 		items = {
 			{ items = { "scavock_core:scrap_ingot" }, rarity = 3 },
+			{ items = { "scavock_power:plastic" }, rarity = 3 },
+			{ items = { "scavock_core:copper_lump" }, rarity = 4 },
 			{ items = { "scavock_core:stick 2" }, rarity = 2 },
 			{ items = { "scavock_core:gravel" } },
 		},
@@ -248,6 +250,12 @@ core.register_node("scavock_core:stone_with_titanium", {
 	groups = { cracky = 1 },
 	drop = "scavock_core:titanium_lump",
 })
+core.register_node("scavock_core:stone_with_copper", {
+	description = "Copper Ore",
+	tiles = { "scavock_copper_ore.png" },
+	groups = { cracky = 2 },
+	drop = "scavock_core:copper_lump",
+})
 core.register_node("scavock_core:coal_block", {
 	description = "Coal Block",
 	tiles = { "scavock_coal_block.png" },
@@ -265,6 +273,14 @@ core.register_craftitem("scavock_core:coal_lump", {
 core.register_craftitem("scavock_core:iron_lump", {
 	description = "Iron Lump (smelt it)",
 	inventory_image = "scavock_iron_lump.png",
+})
+core.register_craftitem("scavock_core:copper_lump", {
+	description = "Copper Lump (smelt it — wires want it)",
+	inventory_image = "scavock_copper_lump.png",
+})
+core.register_craftitem("scavock_core:copper_ingot", {
+	description = "Copper Ingot",
+	inventory_image = "scavock_copper_ingot.png",
 })
 core.register_craftitem("scavock_core:titanium_lump", {
 	description = "Titanium Lump (smelt it)",
@@ -334,6 +350,8 @@ core.register_craft({
 -- Smelting
 core.register_craft({ type = "cooking", output = "scavock_core:iron_ingot",
 	recipe = "scavock_core:iron_lump", cooktime = 4 })
+core.register_craft({ type = "cooking", output = "scavock_core:copper_ingot",
+	recipe = "scavock_core:copper_lump", cooktime = 4 })
 core.register_craft({ type = "cooking", output = "scavock_core:titanium_ingot",
 	recipe = "scavock_core:titanium_lump", cooktime = 10 })
 -- Fuels (§6: fuel is the game's primary consumable sink)

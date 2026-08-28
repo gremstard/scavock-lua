@@ -694,6 +694,89 @@ def fence_tex():
     return px
 add("scavock_creatures", "scavock_fence", fence_tex)
 
+# ---------- power (§15) ----------
+add("scavock_core", "scavock_copper_ore", ore((196, 120, 70), "copore"))
+add("scavock_core", "scavock_copper_lump", item_dot((196, 120, 70), "coplump", 5))
+add("scavock_core", "scavock_copper_ingot", ingot((196, 120, 70)))
+def plastic():
+    px = blank()
+    for y in range(4, 12):
+        for x in range(3, 13):
+            px[y][x] = (210, 210, 214, 220)
+    return px
+add("scavock_power", "scavock_plastic", plastic)
+def wire_tex():
+    px = blank((0, 0, 0, 0))
+    for x in range(SIZE):
+        px[7][x] = (196, 120, 70, 255); px[8][x] = (150, 90, 52, 255)
+    return px
+add("scavock_power", "scavock_wire", wire_tex)
+def lamp(on):
+    def fn():
+        base = (240, 232, 190) if on else (90, 92, 96)
+        px = noise_fill(base, 6, R("lamp" + str(on)))
+        return border(px, (60, 63, 70))
+    return fn
+add("scavock_power", "scavock_lamp_off", lamp(False))
+add("scavock_power", "scavock_lamp_on", lamp(True))
+def engine_tex():
+    px = noise_fill((86, 90, 98), 8, R("engine"))
+    speckle(px, (196, 120, 70), 6, R("engc"), 2)
+    return border(px, (50, 53, 60))
+add("scavock_power", "scavock_engine", engine_tex)
+def battery_tex():
+    px = noise_fill((60, 63, 70), 6, R("batt"))
+    for y in range(5, 11):
+        for x in range(4, 7):
+            px[y][x] = (182, 214, 46, 255)
+    return border(px, (40, 42, 46))
+add("scavock_power", "scavock_battery", battery_tex)
+def solar_tex():
+    px = noise_fill((30, 40, 70), 8, R("solar"))
+    for i in range(0, SIZE, 4):
+        for j in range(SIZE):
+            px[j][min(i, 15)] = (60, 75, 110, 255)
+    return border(px, (86, 90, 98))
+add("scavock_power", "scavock_solar", solar_tex)
+def switch_tex(on):
+    def fn():
+        px = noise_fill((90, 92, 96), 6, R("sw" + str(on)))
+        col = (182, 214, 46) if on else (179, 58, 36)
+        for y in range(5, 11):
+            for x in range(6, 10):
+                px[y][x] = (*col, 255)
+        return px
+    return fn
+add("scavock_power", "scavock_switch_off", switch_tex(False))
+add("scavock_power", "scavock_switch_on", switch_tex(True))
+add("scavock_power", "scavock_plate", lambda: border(noise_fill((120, 120, 122), 8, R("plate")), (86, 90, 98)))
+def door_tex():
+    px = vlines(noise_fill((130, 96, 56), 8, R("pdoor")), (100, 72, 40), 4, R("pdv"))
+    return border(px, (196, 120, 70))
+add("scavock_power", "scavock_door", door_tex)
+def alarm_tex():
+    px = noise_fill((60, 63, 70), 6, R("alarm"))
+    return blob(px, 8, 8, 4, (179, 58, 36))
+add("scavock_power", "scavock_alarm", alarm_tex)
+def torch_tex():
+    px = blank()
+    for y in range(7, 14):
+        for x in range(7, 9):
+            px[y][x] = (110, 78, 44, 255)
+    blob(px, 8, 5, 2, (232, 160, 60))
+    return px
+add("scavock_power", "scavock_torch", torch_tex)
+def oil_tex():
+    px = blank()
+    for y in range(3, 13):
+        for x in range(4, 12):
+            px[y][x] = (179, 58, 36, 255)
+    for y in range(5, 12):
+        for x in range(5, 11):
+            px[y][x] = (40, 38, 36, 255)
+    return px
+add("scavock_power", "scavock_oil", oil_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

@@ -24,6 +24,10 @@ local LOOT_TABLE = {
 	{ "scavock_survival:meat_cooked", 6, 1, 2 },
 	{ "scavock_death:medkit", 8, 1, 2 },
 	{ "scavock_death:stabiliser", 3, 1, 1 },
+	{ "scavock_power:plastic", 8, 1, 3 },
+	{ "scavock_power:oil", 5, 1, 2 },
+	{ "scavock_core:copper_ingot", 6, 1, 3 },
+	{ "scavock_gear:feather", 5, 1, 3 },
 	{ "scavock_core:titanium_ingot", 1, 1, 1 },
 }
 local TOTAL_WEIGHT = 0

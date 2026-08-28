@@ -164,6 +164,12 @@ core.register_ore({
 	y_min = -31000, y_max = 8,
 })
 core.register_ore({
+	ore_type = "scatter", ore = "scavock_core:stone_with_copper",
+	wherein = "scavock_core:stone",
+	clust_scarcity = 12 * 12 * 12, clust_num_ores = 5, clust_size = 3,
+	y_min = -31000, y_max = 20,
+})
+core.register_ore({
 	ore_type = "scatter", ore = "scavock_core:stone_with_titanium",
 	wherein = "scavock_core:stone",
 	clust_scarcity = 17 * 17 * 17, clust_num_ores = 4, clust_size = 3,
