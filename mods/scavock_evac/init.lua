@@ -138,78 +138,250 @@ local function finish_evac(name)
 	core.chat_send_player(name, msg .. " (/stash to view)")
 end
 
-local function channel_tick(name)
-	local ch = channels[name]
-	if not ch then return end
-	local player = core.get_player_by_name(name)
-	if not player or player:get_hp() <= 0 or scavock.downed[name] then
-		channels[name] = nil
-		return
-	end
-	if vector.distance(player:get_pos(), ch.pos) > CHANNEL_RADIUS then
-		channels[name] = nil
-		core.chat_send_player(name, "Evac aborted — you moved away from the beacon.")
-		return
-	end
-	ch.t = ch.t - 1
-	if ch.t <= 0 then
-		channels[name] = nil
-		local meta = core.get_meta(ch.pos)
-		meta:set_int("cooldown_until", math.floor(core.get_gametime()) + BEACON_COOLDOWN)
-		meta:set_string("infotext",
-			("Evac Beacon (recharging %ds)"):format(BEACON_COOLDOWN))
-		finish_evac(name)
-		return
-	end
-	core.chat_send_player(name, ("Evac in %d..."):format(ch.t))
-	core.after(1, channel_tick, name)
+-- ---------------------------------------------------------------------------
+-- The evac STRUCTURE (§21, D1). An evac is a set of required blocks:
+-- a CONSOLE (lever), a SKY BEACON, and 4 TRAPDOORS — the doc's own
+-- candidate list (open #1, smallest reversible). "Connected" is proximity
+-- to the console (open #2 answered as adjacency, not wiring — reversible).
+--
+-- Sequence (§21 confirmed):
+--   1. Pull the console lever to activate.
+--   2. The beacon lights RED, transitioning toward GREEN as evac progresses.
+--   3. BLUE when ready — the 4 trapdoors open.
+--   4. Players drop inside; someone pulls the lever again to CLOSE it,
+--      sending everyone inside to extraction. Closing early — before a
+--      straggler makes it in — is fully possible, on purpose. Preserved
+--      exactly: the lever answers to whoever pulls it.
+--
+-- Broken is BINARY (D1): one or more required blocks missing = flat +X,
+-- identical regardless of which or how many. No per-block scaling, ever.
+-- Repairing mid-call clears the penalty (the derived rule). Between calls:
+-- a cooldown, and nothing else. Sabotage delays but never cancels.
+-- ---------------------------------------------------------------------------
+
+local CALL_TIME = 30        -- seconds from activation to ready (tuning)
+local BROKEN_X = 20         -- open #4: flat extra time while broken
+local COOLDOWN = 120        -- open #3: per-evac (tuning)
+local STRUCT_RADIUS = 6
+
+local calls = {}  -- console hash -> { pos, phase, elapsed, t }
+
+local function survey(console_pos)
+	local minp = vector.subtract(console_pos, STRUCT_RADIUS)
+	local maxp = vector.add(console_pos, STRUCT_RADIUS)
+	local beacons = core.find_nodes_in_area(minp, maxp, {
+		"scavock_evac:beacon", "scavock_evac:beacon_red",
+		"scavock_evac:beacon_green", "scavock_evac:beacon_blue" })
+	local doors = core.find_nodes_in_area(minp, maxp, {
+		"scavock_evac:trapdoor", "scavock_evac:trapdoor_open" })
+	return beacons, doors
 end
 
-core.register_node("scavock_evac:beacon", {
-	description = "Evac Beacon",
-	tiles = { "scavock_beacon_top.png", "scavock_beacon_side.png",
-		"scavock_beacon_side.png" },
-	light_source = 10,
+local function is_broken(console_pos)
+	local beacons, doors = survey(console_pos)
+	return #beacons < 1 or #doors < 4
+end
+
+local function set_beacons(console_pos, state)
+	local beacons = survey(console_pos)
+	for _, pos in ipairs(beacons) do
+		core.swap_node(pos, { name = "scavock_evac:beacon" .. state })
+	end
+end
+
+local function set_doors(console_pos, open)
+	local _, doors = survey(console_pos)
+	for _, pos in ipairs(doors) do
+		core.swap_node(pos, { name = open and "scavock_evac:trapdoor_open"
+			or "scavock_evac:trapdoor" })
+	end
+end
+
+local function extract_players_inside(console_pos)
+	local _, doors = survey(console_pos)
+	local n = 0
+	for _, player in ipairs(core.get_connected_players()) do
+		local ppos = player:get_pos()
+		for _, dpos in ipairs(doors) do
+			if math.abs(ppos.x - dpos.x) < 1.2
+					and math.abs(ppos.z - dpos.z) < 1.2
+					and ppos.y < dpos.y + 0.5 and ppos.y > dpos.y - 4 then
+				finish_evac(player:get_player_name())
+				n = n + 1
+				break
+			end
+		end
+	end
+	return n
+end
+
+local function call_tick(hash)
+	local call = calls[hash]
+	if not call then return end
+	local broken = is_broken(call.pos)
+
+	if call.phase == "charging" then
+		-- flat +X while broken (D1); repairing mid-call clears it, so the
+		-- target recomputes from the CURRENT state every tick
+		local target = broken and (CALL_TIME + BROKEN_X) or CALL_TIME
+		call.elapsed = call.elapsed + 1
+		local progress = call.elapsed / target
+		if progress >= 1 then
+			call.phase = "open"
+			call.t = 25
+			set_beacons(call.pos, "_blue")
+			set_doors(call.pos, true)
+			core.get_meta(call.pos):set_string("infotext",
+				"Evac console — OPEN. Get inside; the lever closes it.")
+		elseif progress >= 0.6 then
+			set_beacons(call.pos, "_green")
+		end
+		core.after(1, call_tick, hash)
+		return
+	end
+
+	if call.phase == "open" then
+		call.t = call.t - 1
+		if call.t <= 0 then
+			extract_players_inside(call.pos)
+			set_doors(call.pos, false)
+			set_beacons(call.pos, "")
+			core.get_meta(call.pos):set_int("cooldown_until",
+				math.floor(core.get_gametime()) + COOLDOWN)
+			core.get_meta(call.pos):set_string("infotext",
+				"Evac console (recharging)")
+			calls[hash] = nil
+			return
+		end
+		core.after(1, call_tick, hash)
+	end
+end
+
+core.register_node("scavock_evac:console", {
+	description = "Evac Console (required block — pull the lever)",
+	tiles = { "scavock_console.png" },
+	paramtype2 = "facedir",
+	light_source = 4,
 	groups = { cracky = 1, evac = 1 },
 	on_construct = function(pos)
 		core.get_meta(pos):set_string("infotext",
-			"Evac Beacon — right-click to extract (10s channel)")
+			"Evac console — pull the lever (right-click) to call")
 	end,
 	on_rightclick = function(pos, node, clicker)
 		local name = clicker:get_player_name()
-		if channels[name] then return end
 		if scavock.downed[name] then
-			core.chat_send_player(name, "You can't call an evac while downed.")
+			core.chat_send_player(name, "You can't work a console while downed.")
 			return
 		end
+		local hash = core.hash_node_position(pos)
+		local call = calls[hash]
+
+		if call and call.phase == "open" then
+			-- THE LEVER: extracts everyone inside, strands everyone outside.
+			-- Betrayal is a feature; preserve it exactly (§21).
+			local n = extract_players_inside(pos)
+			set_doors(pos, false)
+			set_beacons(pos, "")
+			core.get_meta(pos):set_int("cooldown_until",
+				math.floor(core.get_gametime()) + COOLDOWN)
+			core.get_meta(pos):set_string("infotext", "Evac console (recharging)")
+			calls[hash] = nil
+			core.chat_send_player(name,
+				n > 0 and ("Doors closed. %d extracted."):format(n)
+				or "Doors closed on nothing.")
+			return
+		end
+		if call then
+			core.chat_send_player(name, "Call already in progress.")
+			return
+		end
+
 		local meta = core.get_meta(pos)
 		local now = math.floor(core.get_gametime())
-		local until_t = meta:get_int("cooldown_until")
-		if until_t > now then
-			core.chat_send_player(name,
-				("Beacon recharging — %ds left."):format(until_t - now))
+		if meta:get_int("cooldown_until") > now then
+			core.chat_send_player(name, ("Recharging — %ds left.")
+				:format(meta:get_int("cooldown_until") - now))
 			return
 		end
-		meta:set_string("infotext",
-			"Evac Beacon — right-click to extract (10s channel)")
-		channels[name] = { pos = pos, t = CHANNEL_TIME }
-		core.chat_send_player(name,
-			("Evac call started. Stay within %d blocks for %d seconds.")
-				:format(CHANNEL_RADIUS, CHANNEL_TIME))
-		core.after(1, channel_tick, name)
+		local beacons, doors = survey(pos)
+		if #beacons < 1 then
+			core.chat_send_player(name,
+				"No sky beacon connected. The structure needs one.")
+			return
+		end
+		if #doors < 1 then
+			core.chat_send_player(name,
+				"No trapdoors at all. Place at least one (4 for an unbroken evac).")
+			return
+		end
+		calls[hash] = { pos = pos, phase = "charging", elapsed = 0, t = 0 }
+		set_beacons(pos, "_red")
+		meta:set_string("infotext", "Evac console — call in progress")
+		core.chat_send_player(name, is_broken(pos)
+			and "Evac called. The structure is broken — it will take longer."
+			or "Evac called. Watch the beacon: red, green, blue.")
+		if scavock.noise then
+			scavock.noise(pos, 30, name)
+		end
+		core.after(1, call_tick, hash)
 	end,
 })
 
-core.register_on_leaveplayer(function(player)
-	channels[player:get_player_name()] = nil
-end)
+local function beacon_node(suffix, color, light)
+	core.register_node("scavock_evac:beacon" .. suffix, {
+		description = "Sky Beacon (required block)"
+			.. (suffix ~= "" and " — active" or ""),
+		tiles = { "scavock_beacon_top.png" .. color,
+			"scavock_beacon_side.png" .. color, "scavock_beacon_side.png" .. color },
+		light_source = light,
+		groups = { cracky = 1, evac = 1,
+			not_in_creative_inventory = suffix ~= "" and 1 or nil },
+		drop = "scavock_evac:beacon",
+	})
+end
+beacon_node("", "", 8)
+beacon_node("_red", "^[multiply:#B33A24", 12)
+beacon_node("_green", "^[multiply:#7BA843", 13)
+beacon_node("_blue", "^[multiply:#4A90D9", 14)
+
+core.register_node("scavock_evac:trapdoor", {
+	description = "Evac Trapdoor (required block x4)",
+	drawtype = "nodebox",
+	tiles = { "scavock_trapdoor.png" },
+	paramtype = "light",
+	node_box = { type = "fixed", fixed = { -0.5, 0.3, -0.5, 0.5, 0.5, 0.5 } },
+	groups = { cracky = 2, evac = 1 },
+})
+core.register_node("scavock_evac:trapdoor_open", {
+	description = "Evac Trapdoor (open)",
+	drawtype = "nodebox",
+	tiles = { "scavock_trapdoor.png" },
+	paramtype = "light",
+	walkable = false,
+	node_box = { type = "fixed", fixed = { 0.35, 0.3, -0.5, 0.5, 0.5, 0.5 } },
+	groups = { cracky = 2, not_in_creative_inventory = 1 },
+	drop = "scavock_evac:trapdoor",
+})
+
+-- constructed evacs (§14/§21): every required block is craftable; every
+-- evac is fully open — no ownership, no locks
+core.register_craft({ output = "scavock_evac:console",
+	recipe = { { "scavock_core:copper_ingot", "scavock_core:steel_ingot" },
+		{ "scavock_power:wire", "scavock_core:iron_ingot" } } })
+core.register_craft({ output = "scavock_evac:beacon",
+	recipe = { { "scavock_core:copper_ingot", "scavock_core:titanium_ingot" },
+		{ "scavock_core:steel_ingot", "scavock_core:steel_ingot" } } })
+core.register_craft({ output = "scavock_evac:trapdoor 2",
+	recipe = { { "scavock_core:iron_ingot", "scavock_core:iron_ingot" },
+		{ "scavock_core:planks", "scavock_core:planks" } } })
 
 -- ---------------------------------------------------------------------------
--- Evac stations stamped into the world: small concrete pad with a beacon.
--- Spread across every large open biome (§4 evac distribution).
+-- Worldgen evac stations: full structure, with a chance of generating
+-- BROKEN — the damage roll removes actual trapdoor blocks so the player
+-- can see what to replace (§4)
 -- ---------------------------------------------------------------------------
 local function make_station()
-	local sx, sy, sz = 5, 3, 5
+	local sx, sy, sz = 7, 4, 7
 	local data = {}
 	for i = 1, sx * sy * sz do
 		data[i] = { name = "air", prob = 0 }
@@ -223,9 +395,15 @@ local function make_station()
 			set(x, 0, z, "scavock_core:concrete", 255, true)
 		end
 	end
-	set(2, 1, 2, "scavock_evac:beacon", 255, true)
-	set(0, 1, 0, "scavock_core:concrete_cracked", 180, true)
-	set(4, 1, 4, "scavock_core:concrete_cracked", 180, true)
+	set(2, 0, 2, "air", 255, true); set(3, 0, 2, "air", 255, true)
+	set(2, 0, 3, "air", 255, true); set(3, 0, 3, "air", 255, true)
+	set(2, 1, 2, "scavock_evac:trapdoor", 215, true)
+	set(3, 1, 2, "scavock_evac:trapdoor", 215, true)
+	set(2, 1, 3, "scavock_evac:trapdoor", 215, true)
+	set(3, 1, 3, "scavock_evac:trapdoor", 215, true)
+	set(5, 1, 5, "scavock_evac:console", 255, true)
+	set(1, 1, 1, "scavock_core:concrete", 255, true)
+	set(1, 2, 1, "scavock_evac:beacon", 255, true)
 	return { size = { x = sx, y = sy, z = sz }, data = data }
 end
 

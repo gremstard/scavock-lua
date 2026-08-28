@@ -880,6 +880,23 @@ add("scavock_weapons", "scavock_arrow_poison", arrow_fx((182, 214, 46)))
 add("scavock_weapons", "scavock_arrow_fire", arrow_fx((217, 118, 30)))
 add("scavock_weapons", "scavock_arrow_explosive", arrow_fx((179, 58, 36)))
 
+# ---------- evac structure (§21) ----------
+def console_tex():
+    px = noise_fill((60, 64, 70), 6, R("console"))
+    border(px, (40, 42, 46))
+    for y in range(4, 7):
+        for x in range(3, 13):
+            px[y][x] = (28, 30, 35, 255)
+    px[5][5] = (182, 214, 46, 255); px[5][8] = (179, 58, 36, 255)
+    for y in range(9, 13):
+        px[y][7] = (150, 152, 158, 255); px[y][8] = (150, 152, 158, 255)
+    return px
+add("scavock_evac", "scavock_console", console_tex)
+def trapdoor_tex():
+    px = vlines(noise_fill((100, 106, 116), 6, R("trap")), (70, 74, 82), 4, R("trapv"))
+    return border(px, (50, 53, 60))
+add("scavock_evac", "scavock_trapdoor", trapdoor_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():
