@@ -957,6 +957,53 @@ def compass_tex(preset=False):
 add("scavock_compass", "scavock_compass", compass_tex(False))
 add("scavock_compass", "scavock_compass_cavock", compass_tex(True))
 
+# ---------- vehicles (§27) + water (§24.10) ----------
+def car_tex():
+    px = noise_fill((150, 60, 44), 8, R("car"))
+    for y in range(3, 8):
+        for x in range(3, 13):
+            px[y][x] = (140, 170, 190, 230)
+    for x in (2, 13):
+        for y in range(12, 15):
+            px[y][x] = (30, 30, 32, 255)
+    return px
+add("scavock_vehicles", "scavock_car", car_tex)
+def boat_tex():
+    px = vlines(noise_fill((130, 96, 56), 8, R("boat")), (100, 72, 40), 4, R("boatv"))
+    return border(px, (90, 64, 36))
+add("scavock_vehicles", "scavock_boat", boat_tex)
+def plane_tex():
+    px = noise_fill((170, 175, 182), 8, R("plane"))
+    for y in range(6, 10):
+        for x in range(SIZE):
+            px[y][x] = (120, 126, 134, 255)
+    return px
+add("scavock_vehicles", "scavock_plane", plane_tex)
+def pump_tex():
+    px = noise_fill((179, 58, 36), 8, R("pump"))
+    border(px, (90, 30, 20))
+    for y in range(4, 8):
+        for x in range(5, 11):
+            px[y][x] = (228, 224, 212, 255)
+    return px
+add("scavock_vehicles", "scavock_pump", pump_tex)
+def fish_tex():
+    px = blank()
+    blob(px, 7, 8, 4, (140, 160, 180))
+    px[8][12] = (140, 160, 180, 255); px[7][13] = (140, 160, 180, 255)
+    px[9][13] = (140, 160, 180, 255)
+    px[7][5] = (20, 20, 22, 255)
+    return px
+add("scavock_vehicles", "scavock_fish", fish_tex)
+def rod_tex():
+    px = blank()
+    diag_handle(px, (110, 78, 44))
+    for y in range(2, 8):
+        px[y][13] = (210, 210, 200, 255)
+    px[8][13] = (179, 58, 36, 255)
+    return px
+add("scavock_vehicles", "scavock_rod", rod_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():
