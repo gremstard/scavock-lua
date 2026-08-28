@@ -57,6 +57,18 @@ local function define_animal(name, def)
 		},
 		_scavock_creature = true,
 
+		-- §8: creatures hear. Hostiles are provoked and investigate the
+		-- noise position; skittish animals will flee from it instead.
+		_hears = function(self, pos, radius, source_name)
+			if def.flees_when_hurt then
+				self._flee_until = math.max(self._flee_until or 0, 3)
+				return
+			end
+			self._provoked = true
+			self._noise_pos = pos
+			self._noise_t = 8
+		end,
+
 		on_activate = function(self)
 			self.object:set_armor_groups({ fleshy = 100 })
 			self.object:set_acceleration({ x = 0, y = -18, z = 0 })
@@ -134,6 +146,19 @@ local function define_animal(name, def)
 			-- once provoked
 			local aggressive = (def.hostile or self._provoked)
 				and dist <= def.view_range
+
+			-- heard something but can't see anyone: walk to the noise (§8)
+			if not aggressive and self._noise_t and self._noise_t > 0 then
+				self._noise_t = self._noise_t - 0.4
+				local npos = self._noise_pos
+				if npos and vector.distance(pos, npos) > 2 then
+					local ndir = vector.direction(pos, npos)
+					obj:set_velocity({ x = ndir.x * def.walk_speed * 1.5,
+						y = obj:get_velocity().y, z = ndir.z * def.walk_speed * 1.5 })
+					obj:set_yaw(math.atan2(ndir.z, ndir.x) + math.pi / 2)
+					return
+				end
+			end
 
 			if aggressive then
 				local tpos = player:get_pos()
@@ -221,6 +246,17 @@ define_animal("rat", {
 local function try_spawn(pos, entity, cap)
 	local above = { x = pos.x, y = pos.y + 1, z = pos.z }
 	if core.get_node(above).name ~= "air" then return end
+	-- §22 rhythm (adapted per open item 22 — no sunlight-damage owner):
+	-- outdoors at night is roughly twice as dangerous, with a dusk spike
+	if pos.y > 0 then
+		local tod = core.get_timeofday()
+		local day = tod > 0.25 and tod < 0.72
+		local dusk = tod >= 0.72 and tod < 0.78
+		if day and math.random(2) == 1 then return end
+		if dusk and math.random(2) == 1 then
+			-- dusk spike: extra attempt succeeds more often
+		end
+	end
 	local _, dist = nearest_player(pos, 48)
 	if not dist or dist < 12 then return end
 	-- §12/§14: safe zones spawn no creatures; lit interiors are mob-proof
