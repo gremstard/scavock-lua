@@ -453,6 +453,86 @@ def leather():
     return px
 add("scavock_core", "scavock_leather", leather)
 
+# ---------- survival (§13) ----------
+def item_dot(color, name, r=4):
+    def fn():
+        return blob(blank(), 8, 8, r, color)
+    return fn
+add("scavock_survival", "scavock_meat_raw", item_dot((178, 74, 66), "meatraw", 5))
+add("scavock_survival", "scavock_meat_cooked", item_dot((136, 90, 52), "meatcooked", 5))
+def berry(color, name):
+    def fn():
+        px = blank()
+        blob(px, 5, 9, 2, color); blob(px, 10, 7, 2, color); blob(px, 8, 11, 2, color)
+        px[4][8] = (60, 100, 45, 255); px[3][8] = (60, 100, 45, 255)
+        return px
+    return fn
+add("scavock_survival", "scavock_berry_surface", berry((150, 40, 60), "b1"))
+add("scavock_survival", "scavock_berry_cave", berry((90, 110, 180), "b2"))
+add("scavock_survival", "scavock_berry_mut", berry((182, 214, 46), "b3"))
+def bush(berrycol, name):
+    def fn():
+        px = noise_fill((52, 110, 44), 18, R(name))
+        rng = R(name + "b")
+        for _ in range(6):
+            x, y = rng.randint(2, 13), rng.randint(2, 13)
+            px[y][x] = (*berrycol, 255); px[y][x+1] = (*berrycol, 255)
+        return px
+    return fn
+add("scavock_survival", "scavock_bush_surface", bush((150, 40, 60), "bushs"))
+add("scavock_survival", "scavock_bush_cave", bush((90, 110, 180), "bushc"))
+add("scavock_survival", "scavock_bush_mut", bush((182, 214, 46), "bushm"))
+def mushroom(cap, name):
+    def fn():
+        px = blank()
+        for y in range(4, 8):
+            for x in range(4, 12):
+                px[y][x] = (*cap, 255)
+        for y in range(8, 13):
+            for x in range(7, 9):
+                px[y][x] = (210, 200, 180, 255)
+        return px
+    return fn
+add("scavock_survival", "scavock_mushroom_cave", mushroom((150, 110, 80), "mc"))
+add("scavock_survival", "scavock_mushroom_mut", mushroom((182, 214, 46), "mm"))
+def canteen(fillcol):
+    def fn():
+        px = blank()
+        for y in range(4, 13):
+            for x in range(4, 12):
+                px[y][x] = (86, 90, 98, 255)
+        for y in range(2, 4):
+            for x in range(6, 10):
+                px[y][x] = (60, 63, 70, 255)
+        if fillcol:
+            for y in range(9, 12):
+                for x in range(5, 11):
+                    px[y][x] = (*fillcol, 255)
+        return px
+    return fn
+add("scavock_survival", "scavock_canteen_empty", canteen(None))
+add("scavock_survival", "scavock_canteen_full", canteen((60, 120, 200)))
+def bandage():
+    px = blank()
+    for y in range(6, 10):
+        for x in range(2, 14):
+            px[y][x] = (*BONE, 255)
+    for x in range(2, 14, 3):
+        px[7][x] = (200, 196, 184, 255)
+    return px
+add("scavock_survival", "scavock_bandage", bandage)
+def splint():
+    px = blank()
+    diag_handle(px, (150, 112, 66))
+    for i in range(4, 11, 3):
+        px[SIZE - 1 - i][i - 1] = (*BONE, 255)
+        px[SIZE - 2 - i][i + 1] = (*BONE, 255)
+    return px
+add("scavock_survival", "scavock_splint", splint)
+def river_water():
+    return noise_fill((40, 110, 190), 10, R("rwater"), alpha=160)
+add("scavock_core", "scavock_river_water", river_water)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

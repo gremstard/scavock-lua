@@ -130,6 +130,37 @@ core.register_node("scavock_core:water_flowing", {
 	groups = { water = 3, liquid = 3, not_in_creative_inventory = 1 },
 })
 
+-- Fresh river water (§13: lakes and rivers restore thirst; the OCEAN does
+-- not — salt. Ocean/sea level water uses water_source; rivers carve with
+-- this fresh variant via the mapgen alias below.)
+local river_def = {
+	description = "River Water",
+	drawtype = "liquid",
+	tiles = { "scavock_river_water.png" },
+	use_texture_alpha = "blend",
+	paramtype = "light",
+	walkable = false, pointable = false, diggable = false, buildable_to = true,
+	is_ground_content = false,
+	drowning = 1,
+	liquidtype = "source",
+	liquid_alternative_flowing = "scavock_core:river_water_flowing",
+	liquid_alternative_source = "scavock_core:river_water_source",
+	liquid_viscosity = 1,
+	liquid_range = 2,
+	liquid_renewable = false,
+	post_effect_color = { a = 103, r = 30, g = 70, b = 100 },
+	groups = { water = 3, liquid = 3, fresh_water = 1 },
+}
+core.register_node("scavock_core:river_water_source", river_def)
+local river_flow = table.copy(river_def)
+river_flow.description = "Flowing River Water"
+river_flow.drawtype = "flowingliquid"
+river_flow.special_tiles = { "scavock_river_water.png", "scavock_river_water.png" }
+river_flow.paramtype2 = "flowingliquid"
+river_flow.liquidtype = "flowing"
+river_flow.groups = { water = 3, liquid = 3, fresh_water = 1, not_in_creative_inventory = 1 }
+core.register_node("scavock_core:river_water_flowing", river_flow)
+
 -- Trees: three variants (§4 biome roster: forest / pine / birch)
 local function register_tree(id, desc, side, top, leaftex, leafdesc)
 	core.register_node("scavock_core:" .. id, {
@@ -529,6 +560,6 @@ end
 -- ---------------------------------------------------------------------------
 core.register_alias("mapgen_stone", "scavock_core:stone")
 core.register_alias("mapgen_water_source", "scavock_core:water_source")
-core.register_alias("mapgen_river_water_source", "scavock_core:water_source")
+core.register_alias("mapgen_river_water_source", "scavock_core:river_water_source")
 core.register_alias("mapgen_sand", "scavock_core:sand")
 core.register_alias("mapgen_cobble", "scavock_core:concrete_cracked")

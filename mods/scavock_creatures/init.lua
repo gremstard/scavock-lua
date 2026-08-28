@@ -199,7 +199,8 @@ define_animal("boar", {
 	hp = 20, damage = 4, reach = 2.0, attack_interval = 1.6,
 	view_range = 12, walk_speed = 1.2, run_speed = 6.5, -- the charge
 	hostile = false, pack_alert = false,
-	drops = { { item = "scavock_core:leather", chance = 0.9, min = 2, max = 3 } },
+	drops = { { item = "scavock_core:leather", chance = 0.9, min = 2, max = 3 },
+		{ item = "scavock_survival:meat_raw", chance = 0.9, min = 1, max = 2 } },
 })
 
 define_animal("rat", {

@@ -79,6 +79,10 @@ core.register_globalstep(function(dtime)
 		if scavock.crawl_mult then
 			mult = mult * scavock.crawl_mult(name)
 		end
+		-- broken leg (scavock_survival, §13)
+		if scavock.leg_mult then
+			mult = mult * scavock.leg_mult(name)
+		end
 		local prev = sprint_state[name]
 		if not prev or math.abs(prev - mult) > 0.01 then
 			sprint_state[name] = mult
