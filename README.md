@@ -1,97 +1,92 @@
-# Scavock on Luanti
+# Scavock Lua Edition
 
-A vertical slice of **SCAVOCK** (see `../scavock/SCAVOCK_Master_Design_Doc_v8.md`)
-built as a **Luanti game** — a total conversion running on the Luanti engine
-(formerly Minetest). No minetest_game content; every node, item, and rule is
-Scavock's.
+**Survival Sandbox Extraction.** The full 1.0 feature set of the SCAVOCK
+Master Design Doc (v8), implemented as a total-conversion game on the
+[Scavock engine](https://github.com/gremstard/scavock-engine) (a rebranded
+Luanti fork). Every node, item, creature, and rule is Scavock's.
 
-This is the "fork a Minecraft-clone" experiment. On Luanti you don't fork the
-engine to make a game — you write a *game package* (this repo) and the engine
-runs it. Forking the engine itself is only needed later, for branding or
-engine-level features.
+**Status: feature-complete against the design doc's 1.0 scope (as adapted
+below). What remains is bug-testing, tuning, and fixing.**
 
 ## Run it
 
-1. Install Luanti: `brew install --cask luanti` (already done on this machine).
-2. This repo is symlinked into `~/Library/Application Support/minetest/games/scavock`,
-   so it appears as **Scavock** in Luanti's game list.
-3. Open Luanti → select the Scavock game → create a world (mapgen v7, any seed —
-   seeds are arbitrary strings, matching D16) → play.
+Download from [Releases](https://github.com/gremstard/scavock-lua/releases)
+(macOS .app / Windows .exe, game bundled), or clone next to the engine repo
+and symlink into its `games/`.
 
-Controls that matter: **double-tap W or hold Shift** to sprint (unlimited —
-no stamina, §7), **C/Ctrl** to crouch, **I** for the grid backpack,
-right-click an **Evac Beacon** to start a 10-second extraction channel,
-`/vault` and `/stash` (or the buttons on the inventory screen) for storage.
+Controls: double-tap **W** or hold **Shift** to sprint · **C/Ctrl** crouch ·
+**I** gear + grid backpack · right-click weapons to open the block window ·
+right-click a downed player to revive · `/spawns`, `/stash` commands.
 
-## The loop as built
+## The loop
 
-Spawn with nothing (§10) → scavenge **abandoned outposts** on the plains for
-crates → chop/mine your way up the **material ladder**
-(Scrap → Iron → Steel → Titanium → Graphene, §6/§11) at the **workbench** and
-**furnace** → carry everything you've gathered to an **Evac Beacon** and channel
-10 seconds to bank it into your **Extraction Stash** → die first and *everything
-drops where you fell* (§12), while your small **Vault** survives (§5).
+Spawn with shorts (§10) → forage berries, scavenge outposts, fight or slip
+past the roster → climb Leather→Graphene at workbench and furnace → build,
+light, and power a base that is never safe → reach an evac console, watch
+the beacon run red-green-blue, drop through the trapdoors — and hope
+whoever pulls the lever waits for you. Die anywhere in that and everything
+drops where you fell; the vault survives.
 
-## Design doc mapping
+## Design doc → build (1.0 systems)
 
-| Doc decision | Status here |
-|---|---|
-| Fully diggable voxel world (§4) | ✅ engine-native |
-| Structures are voxel data, stamped at worldgen (§4) | ✅ outposts + evac stations are schematics, fully breachable |
-| Tool-gated progression, weak bare-hands fallback (§6) | ✅ hand digs dirt slowly, chops wood painfully, can't touch stone |
-| No firearms; bows with travel time, recoverable arrows (§6) | ✅ bow + arrow entity; missed arrows drop as items, body hits recover 50% |
-| Material ladder ×  form ladder (§6) | ✅ 5 materials × (pick, axe, dagger, sword, war axe, double axe, spear) |
-| Weapon roster as roles, not ranks (§7) | ✅ per-form speed/damage/reach; TTK tuned on *time* (~5s window each) |
-| Long TTK, gradual gear slope (§7) | ✅ +0..+2 damage across five tiers; no one-shots |
-| Blocking windows per weapon (§7) | ✅ right-click opens the window (dagger 0.55s … war axe 0.22s); sprint halves it; 75% absorb |
-| Stagger: chance, weight-scaled, ICD (§7) | ✅ 8% dagger … 32% war axe (max 40%); 2s internal cooldown; brief hard slow |
-| Creatures: simplified model, knockback not stagger (§7/§24) | ✅ wolves (pack hunters, pack-alert on aggro), boars (neutral, provoked charge), rats (ruin scavengers, flee when hurt); box visuals; leather drops |
-| Two-stage death (§12) | ✅ lethal damage downs (1 HP, crawl 0.12x, no jump/interact/attack); one more hit finishes → full drop; downed can't be looted (nothing drops until finished) |
-| Revives (§12 table) | ✅ right-click a downed player: bare 10%/6s, med kit 20%/4s, stabiliser 30%/2s; kits craftable + in crate loot |
-| STEP_HEIGHT = 1.0 (§7) | ✅ `stepheight = 1.1` |
-| Unlimited sprint, no stamina meter (§7) | ✅ double-tap W or Shift, 1.65× (D6, engine fork) |
-| Weight governs speed, floor at 0.6× (§7) | ✅ occupied grid cells → speed multiplier |
-| Death drops full inventory (§12) | ✅ |
-| Vault survives everything, deliberately small (§5) | ✅ 8 slots, persisted in player meta |
-| Evac points across large biomes, cooldown model (D1, §4) | ✅ beacons w/ 120s cooldown; block-damage/repair states not yet |
-| Biome roster (§4) | ✅ grasslands, plains, forest ×3, snowy ×2, desert, savanna, rainforest, mountains, beach, ocean |
-| Graphene from coal (§11) | ✅ placeholder recipe (dedicated workbench not yet specified in doc either) |
-| Fuel as the economy's sink (§6) | ✅ furnace burns coal/wood; power tools not yet |
+| System | Doc | Status |
+|---|---|---|
+| Diggable persistent voxel world, structures as voxels | §4 | ✅ |
+| Biome roster + mutation spectrum (green→chartreuse→orange) | §4/§25 | ✅ seed-noise mutation zones, creeping mutated grass/flora, per-item 50/50 loot roll |
+| Underground: ancient ruins / mutated caves / Cavock | §4b | ✅ stamped into natural caves; Cavock holds exactly one compass |
+| Compasses: bind by touch, continuity, Cavock preset | §4c | ✅ full continuity table; trades can carry trackers |
+| Icelands + futuristic city + The Source + Yetis | §4b/§24 | ✅ seed-derived location ~4–6 km out, compass-only, lethal cold, no food |
+| Wipes/vault | §5/§18 | ✅ vault survives death (wipe = new world; cross-world vault is a server feature, noted) |
+| Tool gating, material ladder, no firearms, recoverable arrows | §6 | ✅ |
+| Weapon roster, blocking windows, stagger, long TTK | §7 | ✅ |
+| Noise & stealth, group multiplication, creatures hear | §8 | ✅ |
+| Grid inventory (spatial, rotatable) + hotbar | §9 | ✅ 8×N grid, footprints, rotation; top row = hotbar |
+| Clothing equip layers, spawn-with-shorts, backpack sizing | §10 | ✅ 8 slots + reinforcement slot; cosmetics N/A (no model layers) |
+| Reinforcement: pool split, break moment, repair, 4 perks | §11 | ✅ 7 tiers, element→perk crafting, Safe Slot survives death |
+| Two-stage death, revives, bleedout, self-revive, corpses, beds, safe zones, spawn invuln | §12 | ✅ complete |
+| Hunger/thirst (mild), salt ocean, bleeding + capped spiral, broken legs | §13 | ✅ |
+| Bases never safe, lighting mob-proofing, containers, locks, 3-outcome forcing | §14 | ✅ |
+| Wires & power: torch floor, engine/battery/solar, parts list | §15 | ✅ loud engines (open #1 resolved to the tradeoff) |
+| TNT, grenades, trigger bombs (linked pair), disarm+tamper, chains | §16 | ✅ range-limited detonation (open #13 → limited) |
+| Bow upgrades + poison/fire/explosive arrows, consumed on impact | §17 | ✅ no enchanting anywhere |
+| Credits + merchants | §19 | ✅ trading posts in safe zones |
+| Evac as required-block structure: lever→red→green→blue→trapdoors→betrayal lever; binary broken +X | §21 | ✅ the strongest story mechanic, preserved exactly |
+| Day/night rhythm | §22 | ✅ night ≈2× outdoor spawns + dusk spike; sunlight-damage unbuilt per open item 22 (no roster owner) |
+| Creature roster: 10 animals, 7 megafauna, 2 Man Eaters, Yeti; commitment=vulnerability; pets; livestock; foraging | §24 | ✅ box-rig cubes; Titanoboa's three stages intact; swallowed loot destroyed |
+| Water traversal, boats, fishing (no underwater zone) | §24.10 | ✅ |
+| Vehicles: fuel %, HP curve, 0% = voxel-destroying explosion | §27 | ✅ car/boat/plane (planes fly by look; "jets" = same system, faster — not separately built) |
 
-### Known adaptations (engine reality vs. doc)
+### Adaptations (engine reality vs. doc — all flagged in code comments)
 
-- ~~Slot inventory, not Tarkov grid~~ **Implemented (scavock_grid):** the
-  backpack is a true 8x6 spatial grid — items occupy multi-cell footprints,
-  rotate (R while held), and the vault (4x2) is grid-restricted with a
-  transfer view. Interaction is click-to-move (pick up / place / rotate);
-  engine-native drag-and-drop is the remaining polish. The top row doubles
-  as the hotbar, so wieldables must anchor there. Engine-driven moves
-  (shift-click from crates, craft output) are policed into first-fit
-  placements by an allow-callback.
-- ~~Sprint input is Aux1~~ **Resolved by the engine fork:** D6 is implemented
-  as designed — double-tap forward OR hold Shift, both feeding the aux1 bit;
-  crouch/sneak moved to C/Ctrl. (`doubletap_forward_sprint` engine setting.)
-- **Mountains are altitude-approximated**, not an independent noise field (D17
-  needs a custom mapgen pass).
-- **Weight = occupied grid cells**, since items have no per-item mass stat yet.
-- **Logging out while downed counts as knocked out** (inventory drops) — an
-  anti-exploit rule the doc doesn't specify; without it a relog stands you
-  back up at 1 HP.
+- Sprint = double-tap W / Shift via the engine fork (D6). Crouch on C/Ctrl;
+  Caps-Lock crouch (D9) and the crouch auto-step/ledge rules are engine work
+  not yet done.
+- Grid inventory is click-to-move; drag-and-drop needs an engine formspec
+  element (the fork's next big engine feature).
+- Weak points are temporal (hits during commitment) rather than positional
+  hitboxes — cube entities have one hitbox. Glyptodon's facing check is the
+  positional exception.
+- Mountains/Icelands placement approximate D17's independent-noise ideal.
+- Logging out while downed counts as knocked out (anti-exploit, not in doc).
+- Open questions answered with smallest-reversible choices are marked
+  "(open #N)" in code comments; genuinely open ones remain unbuilt.
 
-### Deferred (big rocks, in doc order)
+### Out of scope for the Lua edition (platform/service work, not game rules)
 
-
-reinforcement crafting + damage pool (§11), noise & stealth (§8), the
-§24 megafauna/Man Eater/cryptid tier (ordinary animals are in), Icelands/Cavock/Muvock and the compass system (§4b/4c), proximity voice,
-wipe cycles as a server feature, evac block-structure damage/repair (D1).
+Proximity voice (LiveKit), accounts/unified official vault/playtime
+gate/anti-cheat/replay (§18/§28 server infrastructure — Luanti provides
+plain multiplayer + auth), cosmetics + Tokens/packs/quests/seasons/streamer
+rewards (§19/§20/§31 live-ops on a cosmetic layer that needs the player
+model), Muvock + mutated equipment (§26/§17, post-1.0 by the doc itself),
+water-as-a-zone + water Man Eater/cryptid (post-1.0), underground tracker
+(post-1.0), Blockwire content tools (§29, belongs to the Babylon edition).
 
 ## Dev notes
 
-- `tools/gen_textures.py` — regenerates all 84 placeholder textures
-  (pure-stdlib PNG writer, deterministic). Replace with real art at will.
-- Smoke tests: the build was verified with an in-engine test mod (recipes,
-  loot fill, worldgen stamping, biome census) run against a headless server:
-  `/Applications/Luanti.app/Contents/MacOS/luanti --server --gameid scavock --world <dir>`.
-- Mods: `scavock_core` (nodes/materials/workbench/furnace), `scavock_player`
-  (movement/death/UI), `scavock_tools`, `scavock_weapons`, `scavock_biomes`,
-  `scavock_loot` (outposts/crates), `scavock_evac` (beacons/vault/stash).
+- `tools/gen_textures.py` regenerates all 231 placeholder textures.
+- Headless suites (run against a dedicated server): grid logic (16 checks),
+  full creature roster spawn/tick (20/20), recipes/loot/worldgen. See git
+  history for the exact worldmods.
+- Mods: core, player, grid, gear, combat, death, survival, creatures
+  (+megafauna/maneaters), noise, world, power, locks, boom, weapons, tools,
+  compass, under, vehicles, trade, loot, evac, biomes.

@@ -14,15 +14,18 @@ scavock_under = {}
 -- Mutation field: seed-derived noise, stable for the world
 -- ---------------------------------------------------------------------------
 local mut_noise
-core.register_on_mods_loaded(function()
-	mut_noise = core.get_perlin({
-		offset = 0, scale = 1, spread = { x = 400, y = 400, z = 400 },
-		seed = 8811, octaves = 3, persistence = 0.6, lacunarity = 2.0,
-	})
-end)
 
 function scavock.mutation_at(pos)
-	if not mut_noise then return 0 end
+	if not mut_noise then
+		-- perlin objects need the map seed: lazily create on first use,
+		-- which is always after mapgen init
+		local ok, noise = pcall(core.get_perlin, {
+			offset = 0, scale = 1, spread = { x = 400, y = 400, z = 400 },
+			seed = 8811, octaves = 3, persistence = 0.6, lacunarity = 2.0,
+		})
+		if not ok or not noise then return 0 end
+		mut_noise = noise
+	end
 	local v = mut_noise:get_2d({ x = pos.x, y = pos.z })
 	return math.max(0, math.min(1, (v + 1) / 2))
 end

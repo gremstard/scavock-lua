@@ -84,7 +84,7 @@ local function storage_formspec(player_name, kind, size, label, note)
 	})
 end
 
-scavock_evac = scavock_evac or {}
+scavock_evac = rawget(_G, "scavock_evac") or {}
 
 -- The vault has a grid view owned by scavock_grid; the stash stays a plain
 -- list (it stands in for base containers, which are not grid-restricted).
