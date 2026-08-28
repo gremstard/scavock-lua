@@ -815,6 +815,52 @@ def crate_cracked():
     return px
 add("scavock_locks", "scavock_crate_cracked", crate_cracked)
 
+# ---------- explosives (§16) ----------
+def tnt_tex():
+    px = noise_fill((179, 58, 36), 8, R("tnt"))
+    for y in range(6, 10):
+        for x in range(SIZE):
+            px[y][x] = (228, 224, 212, 255)
+    return px
+add("scavock_boom", "scavock_tnt", tnt_tex)
+def tnt_lit():
+    px = tnt_tex()
+    px[1][8] = (232, 160, 60, 255); px[0][8] = (240, 200, 80, 255)
+    return px
+add("scavock_boom", "scavock_tnt_lit", tnt_lit)
+def grenade_tex():
+    px = blank()
+    blob(px, 8, 9, 4, (70, 76, 68))
+    px[4][8] = (150, 152, 158, 255); px[3][8] = (150, 152, 158, 255)
+    return px
+add("scavock_boom", "scavock_grenade", grenade_tex)
+def sensor_tex():
+    px = blank()
+    for y in range(5, 11):
+        for x in range(4, 12):
+            px[y][x] = (60, 63, 70, 255)
+    px[7][7] = (182, 214, 46, 255); px[7][8] = (182, 214, 46, 255)
+    return px
+add("scavock_boom", "scavock_sensor", sensor_tex)
+def button_tex():
+    px = blank()
+    for y in range(5, 12):
+        for x in range(4, 12):
+            px[y][x] = (86, 90, 98, 255)
+    blob(px, 8, 8, 2, (179, 58, 36))
+    return px
+add("scavock_boom", "scavock_button", button_tex)
+def trigger_bomb():
+    px = grenade_tex()
+    px[7][3] = (182, 214, 46, 255); px[8][3] = (182, 214, 46, 255)
+    return px
+add("scavock_boom", "scavock_trigger_bomb", trigger_bomb)
+def trigger_button():
+    px = button_tex()
+    px[4][4] = (182, 214, 46, 255)
+    return px
+add("scavock_boom", "scavock_trigger_button", trigger_button)
+
 def main():
     n = 0
     for rel, fn in OUT.items():
