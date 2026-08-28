@@ -1004,6 +1004,24 @@ def rod_tex():
     return px
 add("scavock_vehicles", "scavock_rod", rod_tex)
 
+# ---------- trade (§19) ----------
+def credit_tex():
+    px = blank()
+    import math as _m
+    for a in range(0, 360, 6):
+        x = int(8 + 5 * _m.cos(_m.radians(a))); y = int(8 + 5 * _m.sin(_m.radians(a)))
+        px[y][x] = (182, 214, 46, 255)
+    for y in range(5, 11):
+        px[y][7] = (182, 214, 46, 255); px[y][8] = (182, 214, 46, 255)
+    return px
+add("scavock_trade", "scavock_credit", credit_tex)
+def post_tex():
+    px = vlines(noise_fill((130, 96, 56), 8, R("post")), (100, 72, 40), 4, R("postv"))
+    border(px, (90, 64, 36))
+    blob(px, 8, 8, 3, (182, 214, 46))
+    return px
+add("scavock_trade", "scavock_post", post_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():
