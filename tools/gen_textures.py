@@ -777,6 +777,44 @@ def oil_tex():
     return px
 add("scavock_power", "scavock_oil", oil_tex)
 
+# ---------- locks (§14) ----------
+def lock_tex(color):
+    def fn():
+        px = blank()
+        for y in range(6, 13):
+            for x in range(4, 12):
+                px[y][x] = (*color, 255)
+        for a in range(0, 180, 20):
+            import math as _m
+            x = int(8 + 3 * _m.cos(_m.radians(a))); y = int(6 - 3 * _m.sin(_m.radians(a)))
+            if 0 <= y < 16: px[y][x] = (140, 140, 145, 255)
+        px[9][7] = (20, 20, 22, 255); px[9][8] = (20, 20, 22, 255)
+        return px
+    return fn
+add("scavock_locks", "scavock_lock_pickable", lock_tex((150, 152, 158)))
+add("scavock_locks", "scavock_lock_passcode", lock_tex((196, 120, 70)))
+def lockpick():
+    px = blank()
+    for i in range(3, 13):
+        px[SIZE - 1 - i][i] = (198, 198, 200, 255)
+    px[3][12] = (198, 198, 200, 255); px[4][12] = (198, 198, 200, 255)
+    return px
+add("scavock_locks", "scavock_lockpick", lockpick)
+def locker():
+    px = noise_fill((100, 106, 116), 6, R("locker"))
+    border(px, (70, 74, 82))
+    for y in range(3, 13):
+        px[y][8] = (70, 74, 82, 255)
+    return px
+add("scavock_locks", "scavock_locker", locker)
+def crate_cracked():
+    px = vlines(noise_fill((140, 104, 60), 8, R("cratecr")), (110, 80, 44), 5, R("cratecrv"))
+    for i in range(3, 13):
+        px[i][i] = (30, 26, 20, 255)
+        px[i][i - 1] = (30, 26, 20, 255)
+    return px
+add("scavock_locks", "scavock_crate_cracked", crate_cracked)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

@@ -43,7 +43,7 @@ local function roll(rng)
 	end
 end
 
-local function fill_crate(pos)
+function scavock_loot_fill_crate(pos)
 	local meta = core.get_meta(pos)
 	if meta:get_int("filled") == 1 then return end
 	meta:set_int("filled", 1)
@@ -74,7 +74,7 @@ core.register_node("scavock_loot:crate", {
 		meta:get_inventory():set_size("main", 16)
 	end,
 	on_rightclick = function(pos)
-		fill_crate(pos) -- lazy fill on first open
+		scavock_loot_fill_crate(pos) -- lazy fill on first open
 	end,
 	can_dig = function(pos)
 		local meta = core.get_meta(pos)
