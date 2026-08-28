@@ -9,6 +9,16 @@ scavock = {}
 -- verbs that a crawling player should not have.
 scavock.downed = {}
 
+-- Ordered damage pipeline. Mods append filters (player, hp_change, reason)
+-- -> hp_change; scavock_death runs them (survival's thirst amp, gear's
+-- armor absorb) BEFORE its downed/finish logic, so ordering is explicit
+-- instead of an accident of mod load order.
+scavock.damage_filters = {}
+
+-- Craft post-processors: run on the workbench's computed output so crafted
+-- items can carry metadata (reinforcement pool/perk).
+scavock.craft_postprocess = {}
+
 scavock.materials = {
 	-- name, description, tier index (weapons/tools scale off this)
 	{ name = "scrap",    desc = "Scrap Metal" },
@@ -349,10 +359,17 @@ local wb_formspec = table.concat({
 
 local function wb_update_output(pos)
 	local inv = core.get_meta(pos):get_inventory()
+	local craftlist = inv:get_list("craft")
 	local result = core.get_craft_result({
-		method = "normal", width = 3, items = inv:get_list("craft"),
+		method = "normal", width = 3, items = craftlist,
 	})
-	inv:set_stack("output", 1, result.item)
+	local item = result.item
+	if not item:is_empty() then
+		for _, f in ipairs(scavock.craft_postprocess) do
+			item = f(item, craftlist) or item
+		end
+	end
+	inv:set_stack("output", 1, item)
 end
 
 core.register_node("scavock_core:workbench", {

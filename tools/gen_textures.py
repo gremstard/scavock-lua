@@ -533,6 +533,98 @@ def river_water():
     return noise_fill((40, 110, 190), 10, R("rwater"), alpha=160)
 add("scavock_core", "scavock_river_water", river_water)
 
+# ---------- gear (§10 clothing, §11 reinforcement) ----------
+LEATHER_C = (139, 98, 62)
+CLOTH_C = (96, 104, 92)
+def garment(color, name, shape):
+    def fn():
+        px = blank()
+        for (y0, y1, x0, x1) in shape:
+            for y in range(y0, y1):
+                for x in range(x0, x1):
+                    d = R(name + str(x * 16 + y)).randint(-8, 8)
+                    px[y][x] = (clamp(color[0]+d), clamp(color[1]+d), clamp(color[2]+d), 255)
+        return px
+    return fn
+add("scavock_gear", "scavock_cap", garment(LEATHER_C, "cap", [(3, 7, 3, 13), (7, 9, 2, 14)]))
+def glasses():
+    px = blank()
+    for x in range(2, 14):
+        px[7][x] = (40, 42, 46, 255)
+    for cx in (4, 11):
+        for y in range(6, 10):
+            for x in range(cx - 1, cx + 2):
+                px[y][x] = (60, 63, 70, 255)
+    return px
+add("scavock_gear", "scavock_glasses", glasses)
+add("scavock_gear", "scavock_scarf", garment((122, 60, 48), "scarf", [(6, 9, 2, 14), (9, 14, 6, 9)]))
+add("scavock_gear", "scavock_shirt", garment(CLOTH_C, "shirt", [(3, 12, 4, 12), (4, 8, 1, 4), (4, 8, 12, 15)]))
+add("scavock_gear", "scavock_vest", garment((70, 76, 68), "vest", [(3, 13, 4, 12)]))
+add("scavock_gear", "scavock_shorts", garment((80, 88, 100), "shorts", [(4, 8, 3, 13), (8, 13, 3, 7), (8, 13, 9, 13)]))
+add("scavock_gear", "scavock_pants", garment((66, 72, 82), "pants", [(3, 6, 3, 13), (6, 14, 3, 7), (6, 14, 9, 13)]))
+add("scavock_gear", "scavock_backpack_s", garment(LEATHER_C, "bps", [(4, 12, 4, 12)]))
+add("scavock_gear", "scavock_backpack_l", garment((110, 76, 46), "bpl", [(2, 14, 3, 13)]))
+add("scavock_gear", "scavock_shoes", garment((60, 46, 32), "shoes", [(8, 12, 2, 8), (8, 12, 9, 15)]))
+def reinforcement(color):
+    def fn():
+        px = blank()
+        for y in range(3, 13):
+            for x in range(3, 13):
+                if abs(x - 8) + abs(y - 8) <= 6:
+                    px[y][x] = (*color, 255)
+        for y in range(6, 10):
+            for x in range(6, 10):
+                px[y][x] = tuple(clamp(c - 40) for c in color) + (255,)
+        return px
+    return fn
+REINF_COLORS = {
+    "leather": LEATHER_C, "chain": (150, 152, 158), "scrap": (138, 127, 106),
+    "iron": (198, 198, 200), "steel": (127, 143, 166),
+    "titanium": (170, 186, 205), "graphene": (45, 45, 50),
+}
+for tier, col in REINF_COLORS.items():
+    add("scavock_gear", f"scavock_reinf_{tier}", reinforcement(col))
+def chain_link():
+    px = blank()
+    for a in range(0, 360, 12):
+        import math as _m
+        x = int(8 + 4 * _m.cos(_m.radians(a))); y = int(8 + 4 * _m.sin(_m.radians(a)))
+        px[y][x] = (150, 152, 158, 255)
+    return px
+add("scavock_core", "scavock_chain_link", chain_link)
+def feather():
+    px = blank()
+    for i in range(3, 13):
+        px[SIZE - 1 - i][i] = (*BONE, 255)
+        if i % 2 == 0 and i < 12:
+            px[SIZE - 2 - i][i] = (200, 196, 184, 255)
+            px[SIZE - i][i] = (200, 196, 184, 255)
+    return px
+add("scavock_gear", "scavock_feather", feather)
+def spring():
+    px = blank()
+    for y in range(3, 13):
+        x = 6 + (y % 3)
+        px[y][x] = (170, 170, 175, 255); px[y][x + 1] = (170, 170, 175, 255)
+    return px
+add("scavock_gear", "scavock_spring", spring)
+def strap():
+    px = blank()
+    for y in range(2, 14):
+        for x in range(6, 10):
+            px[y][x] = (*LEATHER_C, 255)
+    px[7][7] = (90, 60, 36, 255); px[7][8] = (90, 60, 36, 255)
+    return px
+add("scavock_gear", "scavock_strap", strap)
+def lockplate():
+    px = blank()
+    for y in range(4, 12):
+        for x in range(4, 12):
+            px[y][x] = (198, 198, 200, 255)
+    px[8][7] = (40, 42, 46, 255); px[8][8] = (40, 42, 46, 255); px[9][8] = (40, 42, 46, 255)
+    return px
+add("scavock_gear", "scavock_lockplate", lockplate)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

@@ -83,6 +83,10 @@ core.register_globalstep(function(dtime)
 		if scavock.leg_mult then
 			mult = mult * scavock.leg_mult(name)
 		end
+		-- reinforcement speed perk (scavock_gear, §11)
+		if scavock.gear_mult then
+			mult = mult * scavock.gear_mult(name)
+		end
 		local prev = sprint_state[name]
 		if not prev or math.abs(prev - mult) > 0.01 then
 			sprint_state[name] = mult

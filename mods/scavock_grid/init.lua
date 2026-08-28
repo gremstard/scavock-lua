@@ -15,9 +15,26 @@
 
 scavock_grid = {}
 
-local BP_W, BP_H = 8, 6         -- backpack grid (main list, row 0 = hotbar)
+local BP_W = 8                  -- backpack width (row 0 = hotbar)
 local VA_W, VA_H = 4, 2         -- vault grid (§5: deliberately small)
 local CELL = 0.85               -- formspec units per cell
+
+-- Backpack HEIGHT is clothing-driven (§10: the equipped backpack's stats
+-- determine actual grid dimensions; top/vest add rows). scavock_gear
+-- computes it and stores it in player meta; 6 is the legacy default so
+-- pre-clothing saves never truncate.
+local function bp_rows(player)
+	local r = player:get_meta():get_int("bp_rows")
+	if r < 3 or r > 7 then return 6 end
+	return r
+end
+scavock_grid.bp_rows = bp_rows
+
+-- §10 equip layers: 9 fixed slots (8 clothing + reinforcement)
+scavock_grid.EQUIP_SLOTS = {
+	"HAT", "GLASSES", "SCARF", "TOP", "VEST", "BOTTOMS",
+	"BACKPACK", "SHOES", "REINF",
+}
 
 -- ---------------------------------------------------------------------------
 -- Pure grid logic (player-agnostic; exercised by the headless test suite)
@@ -138,11 +155,53 @@ end
 
 local function get_grid(player, id)
 	if id == "main" then
-		return player:get_inventory(), "main", BP_W, BP_H
+		return player:get_inventory(), "main", BP_W, bp_rows(player)
 	elseif id == "vault" then
 		local inv = core.get_inventory({ type = "detached",
 			name = "scavock_vault_" .. player:get_player_name() })
 		return inv, "main", VA_W, VA_H
+	elseif id == "equip" then
+		local inv = core.get_inventory({ type = "detached",
+			name = "scavock_equip_" .. player:get_player_name() })
+		return inv, "main", 1, #scavock_grid.EQUIP_SLOTS
+	end
+end
+scavock_grid.get_grid = get_grid
+
+-- Resize the backpack safely: gather everything first, then repack into
+-- the new dimensions (a bare set_size would silently drop tail stacks).
+function scavock_grid.set_rows(player, rows)
+	rows = math.max(3, math.min(7, rows))
+	local meta = player:get_meta()
+	if meta:get_int("bp_rows") == rows
+			and player:get_inventory():get_size("main") == BP_W * rows then
+		return
+	end
+	local inv = player:get_inventory()
+	local stacks = {}
+	for i = 1, inv:get_size("main") do
+		local stk = inv:get_stack("main", i)
+		if not stk:is_empty() then stacks[#stacks + 1] = stk end
+	end
+	meta:set_int("bp_rows", rows)
+	inv:set_list("main", {})
+	inv:set_size("main", BP_W * rows)
+	local overflow = {}
+	for _, stk in ipairs(stacks) do
+		local idx, rot = scavock_grid.find_fit(inv, "main", BP_W, rows, stk)
+		if idx then
+			if rot == 1 then stk:get_meta():set_int("g_rot", 1) end
+			inv:set_stack("main", idx, stk)
+		else
+			overflow[#overflow + 1] = stk
+		end
+	end
+	for _, stk in ipairs(overflow) do
+		core.add_item(vector.add(player:get_pos(), { x = 0, y = 1, z = 0 }), stk)
+	end
+	if #overflow > 0 then
+		core.chat_send_player(player:get_player_name(),
+			"Your pack shrank — some items dropped at your feet.")
 	end
 end
 
@@ -188,31 +247,62 @@ local function render_grid(fs, player, id, x0, y0)
 	end
 end
 
+-- The 9 equip slots render as a labelled column (1x1 cells regardless of
+-- item footprint)
+local function render_equip(fs, player, x0, y0)
+	local inv = get_grid(player, "equip")
+	if not inv then return end
+	local name = player:get_player_name()
+	local hold = held[name]
+	for i, label in ipairs(scavock_grid.EQUIP_SLOTS) do
+		local py = y0 + (i - 1) * (CELL + 0.06)
+		local stack = inv:get_stack("main", i)
+		if stack:is_empty() then
+			fs[#fs + 1] = ("image_button[%f,%f;%f,%f;scavock_cell.png;gc_equip_%d;]")
+				:format(x0, py, CELL, CELL, i)
+		else
+			local tex = (hold and hold.grid == "equip" and hold.idx == i)
+				and "scavock_cell_held.png" or "scavock_cell_occupied.png"
+			fs[#fs + 1] = ("image[%f,%f;%f,%f;%s]"):format(x0, py, CELL, CELL, tex)
+			fs[#fs + 1] = ("item_image_button[%f,%f;%f,%f;%s;gi_equip_%d;]")
+				:format(x0, py, CELL, CELL, stack:get_name(), i)
+		end
+		fs[#fs + 1] = ("style_type[label;textcolor=#565C66]label[%f,%f;%s]style_type[label;textcolor=#E4E0D4]")
+			:format(x0 + CELL + 0.15, py + CELL / 2, label)
+	end
+end
+
+local EQUIP_W = 2.6
+
 local function build_formspec(player, show_vault)
 	local name = player:get_player_name()
 	local hold = held[name]
+	local BP_H = bp_rows(player)
+	local bp_x = 0.4 + EQUIP_W
 	local bp_w = BP_W * CELL
-	local width = bp_w + (show_vault and (VA_W * CELL + 0.8) or 0) + 0.8
-	width = math.max(width, 10.2)
-	local height = 1.0 + BP_H * CELL + 1.6
+	local width = bp_x + bp_w + (show_vault and (VA_W * CELL + 0.8) or 0) + 0.4
+	width = math.max(width, 12.6)
+	local equip_h = #scavock_grid.EQUIP_SLOTS * (CELL + 0.06)
+	local height = 1.0 + math.max(BP_H * CELL, equip_h) + 1.6
 
 	local fs = {
 		"formspec_version[6]",
 		("size[%f,%f]"):format(width, height),
-		"label[0.4,0.55;", "Backpack",
-			"  ", core.formspec_escape("(top row = hotbar)"), "]",
+		"label[0.4,0.55;", "Gear", "]",
+		("label[%f,0.55;%s]"):format(bp_x, "Backpack  (top row = hotbar)"),
 	}
-	render_grid(fs, player, "main", 0.4, 0.9)
+	render_equip(fs, player, 0.4, 0.9)
+	render_grid(fs, player, "main", bp_x, 0.9)
 
 	if show_vault then
-		fs[#fs + 1] = ("label[%f,0.55;%s]"):format(0.8 + bp_w, "Vault")
-		render_grid(fs, player, "vault", 0.8 + bp_w, 0.9)
-		fs[#fs + 1] = ("label[%f,%f;%s]"):format(0.8 + bp_w,
+		fs[#fs + 1] = ("label[%f,0.55;%s]"):format(bp_x + bp_w + 0.4, "Vault")
+		render_grid(fs, player, "vault", bp_x + bp_w + 0.4, 0.9)
+		fs[#fs + 1] = ("label[%f,%f;%s]"):format(bp_x + bp_w + 0.4,
 			0.9 + VA_H * CELL + 0.4,
 			core.formspec_escape("Survives death and wipes."))
 	end
 
-	local by = 1.1 + BP_H * CELL
+	local by = 1.1 + math.max(BP_H * CELL, equip_h)
 	if hold then
 		local inv, listname = get_grid(player, hold.grid)
 		local stack = inv and inv:get_stack(listname, hold.idx)
@@ -265,6 +355,27 @@ local function try_place(player, from, to_grid, to_idx)
 	if not src_inv or not dst_inv then return false end
 	local stack = src_inv:get_stack(src_list, from.idx)
 	if stack:is_empty() then return false end
+
+	-- equip slots: single-cell, slot-typed (§10)
+	if to_grid == "equip" then
+		local slot = core.get_item_group(stack:get_name(), "scavock_slot")
+		if slot ~= to_idx then
+			core.chat_send_player(name, "That doesn't go in the "
+				.. scavock_grid.EQUIP_SLOTS[to_idx]:lower() .. " slot.")
+			return false
+		end
+		if not dst_inv:get_stack(dst_list, to_idx):is_empty() then
+			core.chat_send_player(name, "Slot occupied.")
+			return false
+		end
+		local one = stack:take_item(1)
+		src_inv:set_stack(src_list, from.idx, stack)
+		dst_inv:set_stack(dst_list, to_idx, one)
+		if scavock_gear and scavock_gear.on_equip_changed then
+			scavock_gear.on_equip_changed(player)
+		end
+		return true
+	end
 	local s = scavock.item_size(stack:get_name())
 	local w, h = s.w, s.h
 	if from.rot then
@@ -284,6 +395,10 @@ local function try_place(player, from, to_grid, to_idx)
 	end
 	src_inv:set_stack(src_list, from.idx, ItemStack(""))
 	dst_inv:set_stack(dst_list, to_idx, stack)
+	if (from.grid == "equip" or to_grid == "equip")
+			and scavock_gear and scavock_gear.on_equip_changed then
+		scavock_gear.on_equip_changed(player)
+	end
 	return true
 end
 
@@ -393,9 +508,9 @@ end)
 -- first-fit automatically.
 -- ---------------------------------------------------------------------------
 
-local function placement_allowed(inv, index, stack, ignore_anchor)
+local function placement_allowed(player, inv, index, stack, ignore_anchor)
 	local w, h = stack_footprint(stack)
-	if scavock_grid.fits(inv, "main", BP_W, BP_H, index, w, h, ignore_anchor) then
+	if scavock_grid.fits(inv, "main", BP_W, bp_rows(player), index, w, h, ignore_anchor) then
 		return stack:get_count()
 	end
 	-- merging onto an existing stack of the same item is always fine
@@ -412,10 +527,10 @@ core.register_allow_player_inventory_action(function(player, action, inv, info)
 		if info.to_list ~= "main" then return info.count end
 		local stack = inv:get_stack(info.from_list, info.from_index)
 		local ignore = (info.from_list == "main") and info.from_index or nil
-		return math.min(info.count, placement_allowed(inv, info.to_index, stack, ignore))
+		return math.min(info.count, placement_allowed(player, inv, info.to_index, stack, ignore))
 	elseif action == "put" then
 		if info.listname ~= "main" then return info.stack:get_count() end
-		return placement_allowed(inv, info.index, info.stack, nil)
+		return placement_allowed(player, inv, info.index, info.stack, nil)
 	end
 	return info.stack and info.stack:get_count() or (info.count or 0)
 end)
@@ -426,10 +541,11 @@ end)
 
 core.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
-	inv:set_size("main", BP_W * BP_H)
+	local rows = bp_rows(player)
+	inv:set_size("main", BP_W * rows)
 	player:hud_set_hotbar_itemcount(BP_W)
-	if not scavock_grid.occupancy(inv, "main", BP_W, BP_H) then
-		local overflow = scavock_grid.repack(inv, "main", BP_W, BP_H)
+	if not scavock_grid.occupancy(inv, "main", BP_W, rows) then
+		local overflow = scavock_grid.repack(inv, "main", BP_W, rows)
 		for _, st in ipairs(overflow) do
 			core.add_item(vector.add(player:get_pos(), { x = 0, y = 1, z = 0 }), st)
 		end

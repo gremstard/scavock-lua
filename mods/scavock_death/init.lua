@@ -69,7 +69,11 @@ local function set_downed(player, on)
 		downed_data[name] = { had_interact = privs.interact and true or false }
 		privs.interact = nil
 		core.set_player_privs(name, privs)
-		player:set_physics_override({ jump = 0 })
+		if scavock.refresh_jump then
+			scavock.refresh_jump(player)
+		else
+			player:set_physics_override({ jump = 0 })
+		end
 		downed_data[name].hud_ids = {
 			player:hud_add({
 				type = "text", position = { x = 0.5, y = 0.42 },
@@ -97,7 +101,11 @@ local function set_downed(player, on)
 		end
 		downed_data[name] = nil
 		revives[name] = nil
-		player:set_physics_override({ jump = 1 })
+		if scavock.refresh_jump then
+			scavock.refresh_jump(player)
+		else
+			player:set_physics_override({ jump = 1 })
+		end
 	end
 end
 
@@ -107,6 +115,11 @@ end
 -- ---------------------------------------------------------------------------
 core.register_on_player_hpchange(function(player, hp_change, reason)
 	if hp_change >= 0 then return hp_change end
+	-- ordered pipeline: thirst amp, armor absorb, etc. (scavock.damage_filters)
+	for _, f in ipairs(scavock.damage_filters) do
+		hp_change = f(player, hp_change, reason)
+		if hp_change >= 0 then return hp_change end
+	end
 	local name = player:get_player_name()
 	if scavock.downed[name] then
 		-- finishing blow: let it kill outright
@@ -144,6 +157,9 @@ core.register_on_leaveplayer(function(player)
 					x = math.random() - 0.5, y = 0.5, z = math.random() - 0.5 }), stack)
 				inv:set_stack("main", i, ItemStack(""))
 			end
+		end
+		if scavock.drop_equipment then
+			scavock.drop_equipment(player, pos)
 		end
 	end
 	scavock.downed[name] = nil

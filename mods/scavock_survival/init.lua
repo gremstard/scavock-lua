@@ -169,8 +169,8 @@ core.register_globalstep(function(dtime)
 	end
 end)
 
--- thirst raises incoming damage slightly (§13)
-core.register_on_player_hpchange(function(player, hp_change, reason)
+-- thirst raises incoming damage slightly (§13) — ordered damage filter
+table.insert(scavock.damage_filters, function(player, hp_change, reason)
 	if hp_change >= 0 then return hp_change end
 	if reason and (reason.bleed or reason.from == "mod") then return hp_change end
 	local s = st[player:get_player_name()]
@@ -178,7 +178,7 @@ core.register_on_player_hpchange(function(player, hp_change, reason)
 		return math.floor(hp_change * THIRST_DMG_MULT)
 	end
 	return hp_change
-end, true)
+end)
 
 -- hits can cause bleeding; falls can cause bleeding and broken legs (§13)
 local function bleed_chance(player)
