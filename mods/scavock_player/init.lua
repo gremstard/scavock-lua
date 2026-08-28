@@ -104,6 +104,13 @@ end)
 -- full inventory drops"). Downed/revive two-stage model deferred — README.
 -- ---------------------------------------------------------------------------
 core.register_on_dieplayer(function(player)
+	local name = player:get_player_name()
+	if scavock.suppress_drop and scavock.suppress_drop[name] then
+		-- swallowed by a Man Eater (§24.5): loot destroyed, no drops
+		player:get_inventory():set_list("main", {})
+		core.after(0, function() scavock.suppress_drop[name] = nil end)
+		return
+	end
 	local pos = player:get_pos()
 	local inv = player:get_inventory()
 	for i = 1, inv:get_size("main") do

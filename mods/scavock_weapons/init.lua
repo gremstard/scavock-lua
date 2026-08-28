@@ -95,7 +95,7 @@ core.register_craft({
 	recipe = {
 		{ "scavock_core:scrap_ingot" },
 		{ "scavock_core:stick" },
-		{ "scavock_core:stick" },
+		{ "scavock_gear:feather" },
 	},
 })
 

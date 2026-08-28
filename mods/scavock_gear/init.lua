@@ -322,12 +322,16 @@ clothing("shoes", "shoes", "Boots (-50% fall damage)", "scavock_shoes.png",
 function scavock.drop_equipment(player, pos)
 	local inv = equip_inv(player)
 	if not inv then return end
+	local destroy = scavock.suppress_drop
+		and scavock.suppress_drop[player:get_player_name()]
 	for i = 1, inv:get_size("main") do
 		local stack = inv:get_stack("main", i)
 		if not stack:is_empty() then
 			local keep = i == SLOT.reinf
 				and stack:get_meta():get_string("perk") == "safe"
-			if not keep then
+			if not keep and destroy then
+				inv:set_stack("main", i, ItemStack(""))
+			elseif not keep then
 				core.add_item(vector.add(pos, {
 					x = math.random() - 0.5, y = 0.5, z = math.random() - 0.5 }), stack)
 				inv:set_stack("main", i, ItemStack(""))

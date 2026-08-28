@@ -652,6 +652,48 @@ def stab_adv():
     return px
 add("scavock_death", "scavock_stabiliser_adv", stab_adv)
 
+# ---------- full roster (§24) ----------
+ROSTER = {
+    "cow": ((225, 222, 215), (60, 50, 45)),
+    "chicken": ((235, 232, 225), (200, 60, 40)),
+    "deer": ((176, 140, 96), (140, 106, 70)),
+    "bear": ((70, 52, 38), (50, 36, 26)),
+    "dog": ((150, 116, 78), (110, 82, 54)),
+    "cat": ((130, 128, 132), (100, 98, 102)),
+    "bat": ((48, 44, 50), (30, 28, 32)),
+    "cavebear": ((88, 76, 66), (60, 50, 42)),
+    "hyena": ((160, 140, 104), (90, 76, 56)),
+    "megalania": ((104, 116, 84), (70, 80, 56)),
+    "giganto": ((60, 50, 44), (40, 32, 28)),
+    "terrorbird": ((140, 92, 60), (190, 70, 50)),
+    "argentavis": ((70, 62, 58), (48, 42, 40)),
+    "glyptodon": ((120, 112, 96), (86, 80, 68)),
+    "titanoboa": ((84, 110, 70), (56, 76, 46)),
+    "megisto": ((196, 190, 180), (160, 152, 140)),
+    "yeti": ((232, 234, 238), (200, 204, 210)),
+}
+for cname, (base, streak) in ROSTER.items():
+    add("scavock_creatures", "scavock_" + cname, fur(base, cname, streak))
+    add("scavock_creatures", "scavock_" + cname + "_face", face(base, cname + "f"))
+def rock():
+    px = blank()
+    return blob(px, 8, 8, 5, (110, 108, 104))
+add("scavock_creatures", "scavock_rock", rock)
+def egg():
+    px = blank()
+    return blob(px, 8, 9, 4, (235, 230, 215))
+add("scavock_creatures", "scavock_egg", egg)
+def fence_tex():
+    px = blank()
+    for y in range(SIZE):
+        for x in (3, 4, 11, 12):
+            px[y][x] = (110, 80, 44, 255)
+    for y in (4, 5, 10, 11):
+        for x in range(SIZE):
+            px[y][x] = (130, 96, 56, 255)
+    return px
+add("scavock_creatures", "scavock_fence", fence_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

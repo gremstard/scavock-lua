@@ -84,11 +84,21 @@ function scavock_survival.start_bleed(player)
 	end
 end
 
+-- Megalania venom (§24.7): a consequence already inside you — DoT until
+-- cured (med kit) or outlasted
+function scavock_survival.venom(player, ticks)
+	local s = st[player:get_player_name()]
+	if s then
+		s.venom = math.max(s.venom or 0, ticks)
+	end
+end
+
 function scavock_survival.cure(player, what)
 	local s = st[player:get_player_name()]
 	if not s then return end
 	if what == "bleed" or what == "all" then s.bleed = 0 end
 	if what == "leg" or what == "all" then s.leg = false end
+	if what == "venom" or what == "all" then s.venom = 0 end
 end
 
 -- ---------------------------------------------------------------------------
@@ -119,6 +129,7 @@ local function update_hud(player, s)
 		s.water < MAX - 1 and s.water or nil, 0x9AA0AA)
 	local status = {}
 	if s.bleed > 0 then status[#status + 1] = "BLEEDING" end
+	if s.venom and s.venom > 0 then status[#status + 1] = "VENOM" end
 	if s.leg then status[#status + 1] = "BROKEN LEG" end
 	bar("status", #status > 0 and table.concat(status, "  ") or nil,
 		#status > 0 and 1 or nil, 0xB33A24)
@@ -145,6 +156,17 @@ core.register_globalstep(function(dtime)
 				local hp_max = player:get_properties().hp_max or 20
 				if player:get_hp() < hp_max then
 					player:set_hp(player:get_hp() + 1, { type = "set_hp", from = "mod" })
+				end
+			end
+
+			-- venom: DoT until cured or outlasted
+			if s.venom and s.venom > 0 then
+				s.t_venom = (s.t_venom or 0) + dtime
+				if s.t_venom >= 4 then
+					s.t_venom = 0
+					s.venom = s.venom - 1
+					player:set_hp(player:get_hp() - 1,
+						{ type = "set_hp", from = "mod", bleed = true })
 				end
 			end
 
@@ -424,5 +446,17 @@ core.register_on_respawnplayer(function(player)
 end)
 core.register_on_dieplayer(function(player)
 	local s = st[player:get_player_name()]
-	if s then s.bleed = 0 end
+	if s then s.bleed = 0; s.venom = 0 end
 end)
+
+-- the med kit doubles as a field cure: bleeding + venom (§24.7 "cure")
+core.override_item("scavock_death:medkit", {
+	on_use = function(itemstack, user)
+		scavock_survival.cure(user, "bleed")
+		scavock_survival.cure(user, "venom")
+		core.chat_send_player(user:get_player_name(),
+			"Patched up — bleeding and venom cleared.")
+		itemstack:take_item()
+		return itemstack
+	end,
+})
