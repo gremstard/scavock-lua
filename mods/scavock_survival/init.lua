@@ -415,7 +415,7 @@ core.register_abm({
 	label = "cave flora",
 	nodenames = { "scavock_core:stone" },
 	neighbors = { "air" },
-	interval = 37, chance = 6000,
+	interval = 31, chance = 2600,
 	action = function(pos)
 		local above = { x = pos.x, y = pos.y + 1, z = pos.z }
 		if pos.y > -10 or core.get_node(above).name ~= "air" then return end

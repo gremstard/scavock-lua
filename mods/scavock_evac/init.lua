@@ -416,7 +416,7 @@ core.register_decoration({
 	place_on = { "scavock_core:dirt_with_grass", "scavock_core:dirt_with_dry_grass",
 		"scavock_core:snowblock", "scavock_core:sand" },
 	sidelen = 80,
-	fill_ratio = 0.00002,
+	fill_ratio = 0.00004,
 	biomes = { "grasslands", "plains", "savanna", "desert",
 		"snowy_grasslands", "forest", "birch_forest", "pine_forest" },
 	y_min = 4, y_max = 150,

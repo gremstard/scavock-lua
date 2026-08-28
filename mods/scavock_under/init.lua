@@ -53,9 +53,9 @@ core.register_node("scavock_under:stone_cavock", {
 core.register_abm({
 	label = "mutation creep",
 	nodenames = { "scavock_core:dirt_with_grass" },
-	interval = 43, chance = 900,
+	interval = 29, chance = 380,
 	action = function(pos)
-		if scavock.mutation_at(pos) > 0.72 then
+		if scavock.mutation_at(pos) > 0.62 then
 			core.swap_node(pos, { name = "scavock_under:dirt_with_mut_grass" })
 			if math.random(4) == 1 then
 				local above = { x = pos.x, y = pos.y + 1, z = pos.z }
@@ -265,15 +265,15 @@ core.register_on_generated(function(minp, maxp, blockseed)
 		return
 	end
 
-	if maxp.y > -24 then return end
+	if maxp.y > -16 then return end
 	local rng = PcgRandom(blockseed)
 	local roll = rng:next(1, 130)
 	local kind
-	if roll <= 9 then
+	if roll <= 18 then
 		kind = "ruins"
-	elseif roll <= 12 then
+	elseif roll <= 26 then
 		kind = "mutated"
-	elseif roll == 13 then
+	elseif roll <= 28 then
 		kind = "cavock"
 	end
 	if not kind then return end

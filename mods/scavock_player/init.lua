@@ -105,6 +105,9 @@ core.register_on_leaveplayer(function(player)
 	sprint_state[player:get_player_name()] = nil
 end)
 
+-- box-rig player model + character customizer (D15/§23)
+dofile(core.get_modpath("scavock_player") .. "/customizer.lua")
+
 -- ---------------------------------------------------------------------------
 -- Death: full inventory drops where you fell (§12 "knocked out = true death,
 -- full inventory drops"). Downed/revive two-stage model deferred — README.

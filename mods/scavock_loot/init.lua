@@ -67,7 +67,7 @@ function scavock_loot_fill_crate(pos)
 		local stack = roll(rng)
 		-- §25: per-item 50/50 upgraded/downgraded in mutated areas
 		local mutated = meta:get_string("mut_loot") == "1"
-			or (scavock.mutation_at and scavock.mutation_at(pos) > 0.72)
+			or (scavock.mutation_at and scavock.mutation_at(pos) > 0.62)
 		if mutated and scavock_under then
 			stack = scavock_under.mutate_stack(stack)
 		end
@@ -158,7 +158,7 @@ core.register_decoration({
 	deco_type = "schematic",
 	place_on = { "scavock_core:dirt_with_dry_grass", "scavock_core:dirt_with_grass" },
 	sidelen = 80,
-	fill_ratio = 0.00004,           -- rare: an event, not scenery
+	fill_ratio = 0.00012,           -- playtest: was too sparse
 	biomes = { "plains", "savanna" }, -- cities sit on bare open ground (§4)
 	y_min = 4, y_max = 120,
 	schematic = make_ruin(),

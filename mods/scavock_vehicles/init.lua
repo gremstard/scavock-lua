@@ -255,7 +255,7 @@ core.register_decoration({
 	deco_type = "schematic",
 	place_on = { "scavock_core:dirt_with_dry_grass" },
 	sidelen = 80,
-	fill_ratio = 0.00002,
+	fill_ratio = 0.00004,
 	biomes = { "plains", "savanna" },
 	y_min = 4, y_max = 120,
 	schematic = make_station(),

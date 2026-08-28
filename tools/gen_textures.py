@@ -1022,6 +1022,15 @@ def post_tex():
     return px
 add("scavock_trade", "scavock_post", post_tex)
 
+# ---------- dev (D14 structure tools) ----------
+def wand_tex():
+    px = blank()
+    diag_handle(px, (110, 78, 44))
+    px[2][13] = (182, 214, 46, 255); px[3][12] = (182, 214, 46, 255)
+    px[2][12] = (228, 224, 212, 255); px[3][13] = (228, 224, 212, 255)
+    return px
+add("scavock_dev", "scavock_wand", wand_tex)
+
 def main():
     n = 0
     for rel, fn in OUT.items():
