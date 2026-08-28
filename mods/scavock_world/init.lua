@@ -306,3 +306,61 @@ core.register_decoration({
 
 -- creatures respect safe zones (hooked by scavock_creatures' spawner)
 scavock_world.SAFE_RADIUS = SAFE_RADIUS
+
+
+-- ---------------------------------------------------------------------------
+-- Private / whitelist servers (§28 tier 1). Host from the menu, then:
+--   /whitelist on | off | add <name> | remove <name> | list
+-- Off by default: a freshly hosted world is open LAN/direct-join.
+-- ---------------------------------------------------------------------------
+local wl_store = core.get_mod_storage()
+
+local function wl_get()
+	return core.deserialize(wl_store:get_string("whitelist")) or {}
+end
+local function wl_enabled()
+	return wl_store:get_int("whitelist_on") == 1
+end
+
+core.register_chatcommand("whitelist", {
+	privs = { server = true },
+	params = "on | off | add <name> | remove <name> | list",
+	description = "Private-server whitelist (§28)",
+	func = function(name, param)
+		local cmd, who = param:match("^(%a+)%s*(%S*)$")
+		local list = wl_get()
+		if cmd == "on" then
+			wl_store:set_int("whitelist_on", 1)
+			return true, "Whitelist ON — only listed names (and you) can join."
+		elseif cmd == "off" then
+			wl_store:set_int("whitelist_on", 0)
+			return true, "Whitelist OFF — open server."
+		elseif cmd == "add" and who ~= "" then
+			list[who:lower()] = true
+			wl_store:set_string("whitelist", core.serialize(list))
+			return true, who .. " whitelisted."
+		elseif cmd == "remove" and who ~= "" then
+			list[who:lower()] = nil
+			wl_store:set_string("whitelist", core.serialize(list))
+			return true, who .. " removed."
+		elseif cmd == "list" then
+			local names = {}
+			for n in pairs(list) do names[#names + 1] = n end
+			return true, (wl_enabled() and "ON: " or "off: ")
+				.. (#names > 0 and table.concat(names, ", ") or "(empty)")
+		end
+		return false, "Usage: /whitelist on|off|add <name>|remove <name>|list"
+	end,
+})
+
+core.register_on_prejoinplayer(function(name, ip)
+	if not wl_enabled() then return end
+	if core.is_singleplayer and core.is_singleplayer() then return end
+	-- admins (server priv) always get in; so does the whitelist
+	local privs = core.get_player_privs(name)
+	if privs.server then return end
+	if not wl_get()[name:lower()] then
+		return "This Scavock server is private. Ask the host to /whitelist add "
+			.. name
+	end
+end)

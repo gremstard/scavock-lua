@@ -103,6 +103,11 @@ function scavock_gear.on_equip_changed(player)
 	-- glasses: distance vision (engine zoom)
 	player:set_properties({ zoom_fov =
 		(not equipped(player, "glasses"):is_empty()) and 15 or 0 })
+
+	-- clothes show on the rig
+	if scavock.apply_character then
+		scavock.apply_character(player)
+	end
 end
 
 function scavock.reinforcement_intact(player)

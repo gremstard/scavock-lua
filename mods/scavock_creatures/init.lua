@@ -61,17 +61,34 @@ scavock_creatures.helpers = {
 -- ---------------------------------------------------------------------------
 function scavock_creatures.define(name, def)
 	scavock_creatures["def_" .. name] = def
+	-- box-rig bodies (§23): def.body picks a generic mesh the creature's
+	-- texture wraps and visual_size stretches into proportion; without a
+	-- body it stays a plain cube
+	local visual_props
+	if def.body then
+		visual_props = {
+			visual = "mesh",
+			mesh = "scavock_" .. def.body .. ".obj",
+			textures = { def.tex },
+		}
+	else
+		visual_props = {
+			visual = "cube",
+			textures = {
+				def.tex, def.tex, def.tex_face, def.tex, def.tex, def.tex,
+			},
+		}
+	end
 	core.register_entity("scavock_creatures:" .. name, {
 		initial_properties = {
 			physical = true,
 			collide_with_objects = true,
 			collisionbox = def.collisionbox,
 			stepheight = 1.1,
-			visual = "cube",
+			visual = visual_props.visual,
+			mesh = visual_props.mesh,
 			visual_size = def.visual_size,
-			textures = {
-				def.tex, def.tex, def.tex_face, def.tex, def.tex, def.tex,
-			},
+			textures = visual_props.textures,
 			hp_max = def.hp,
 			static_save = def.persistent or false,
 		},
@@ -449,6 +466,7 @@ local define_animal = scavock_creatures.define
 -- Tier 1 — ordinary animals (§24.6)
 -- ---------------------------------------------------------------------------
 define_animal("wolf", {
+	body = "quad",
 	collisionbox = { -0.45, 0, -0.45, 0.45, 0.85, 0.45 },
 	visual_size = { x = 0.9, y = 0.85, z = 1.3 },
 	tex = "scavock_wolf.png", tex_face = "scavock_wolf_face.png",
@@ -459,6 +477,7 @@ define_animal("wolf", {
 })
 
 define_animal("bear", {
+	body = "quad",
 	collisionbox = { -0.6, 0, -0.6, 0.6, 1.3, 0.6 },
 	visual_size = { x = 1.2, y = 1.3, z = 1.9 },
 	tex = "scavock_bear.png", tex_face = "scavock_bear_face.png",
@@ -472,6 +491,7 @@ define_animal("bear", {
 })
 
 define_animal("boar", {
+	body = "quad",
 	collisionbox = { -0.5, 0, -0.5, 0.5, 0.9, 0.5 },
 	visual_size = { x = 1.0, y = 0.9, z = 1.5 },
 	tex = "scavock_boar.png", tex_face = "scavock_boar_face.png",
@@ -485,6 +505,7 @@ define_animal("boar", {
 })
 
 define_animal("rat", {
+	body = "quad",
 	collisionbox = { -0.22, 0, -0.22, 0.22, 0.3, 0.22 },
 	visual_size = { x = 0.45, y = 0.3, z = 0.7 },
 	tex = "scavock_rat.png", tex_face = "scavock_rat_face.png",
@@ -495,6 +516,7 @@ define_animal("rat", {
 })
 
 define_animal("deer", {
+	body = "quad",
 	collisionbox = { -0.45, 0, -0.45, 0.45, 1.1, 0.45 },
 	visual_size = { x = 0.9, y = 1.1, z = 1.5 },
 	tex = "scavock_deer.png", tex_face = "scavock_deer_face.png",
@@ -506,6 +528,7 @@ define_animal("deer", {
 })
 
 define_animal("cow", {
+	body = "quad",
 	collisionbox = { -0.55, 0, -0.55, 0.55, 1.2, 0.55 },
 	visual_size = { x = 1.1, y = 1.2, z = 1.7 },
 	tex = "scavock_cow.png", tex_face = "scavock_cow_face.png",
@@ -518,6 +541,7 @@ define_animal("cow", {
 })
 
 define_animal("chicken", {
+	body = "bird",
 	collisionbox = { -0.25, 0, -0.25, 0.25, 0.5, 0.25 },
 	visual_size = { x = 0.5, y = 0.5, z = 0.7 },
 	tex = "scavock_chicken.png", tex_face = "scavock_chicken_face.png",
@@ -530,6 +554,7 @@ define_animal("chicken", {
 })
 
 define_animal("dog", {
+	body = "quad",
 	collisionbox = { -0.4, 0, -0.4, 0.4, 0.8, 0.4 },
 	visual_size = { x = 0.8, y = 0.8, z = 1.2 },
 	tex = "scavock_dog.png", tex_face = "scavock_dog_face.png",
@@ -541,6 +566,7 @@ define_animal("dog", {
 })
 
 define_animal("cat", {
+	body = "quad",
 	collisionbox = { -0.3, 0, -0.3, 0.3, 0.5, 0.3 },
 	visual_size = { x = 0.6, y = 0.5, z = 0.9 },
 	tex = "scavock_cat.png", tex_face = "scavock_cat_face.png",
@@ -552,6 +578,7 @@ define_animal("cat", {
 })
 
 define_animal("bat", {
+	body = "bird",
 	collisionbox = { -0.2, 0, -0.2, 0.2, 0.3, 0.2 },
 	visual_size = { x = 0.4, y = 0.3, z = 0.5 },
 	tex = "scavock_bat.png", tex_face = "scavock_bat_face.png",

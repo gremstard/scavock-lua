@@ -53,12 +53,38 @@ local function composite(o)
 	return t
 end
 
+-- what you wear shows on the rig (clothes composite on top of the skin)
+local WEAR = {
+	["scavock_gear:cap"] = "scavock_wear_cap.png",
+	["scavock_gear:shirt"] = "scavock_wear_shirt.png",
+	["scavock_gear:vest"] = "scavock_wear_vest.png",
+	["scavock_gear:pants"] = "scavock_wear_pants.png",
+	["scavock_gear:shoes"] = "scavock_wear_shoes.png",
+}
+
+local function wear_layers(player)
+	local t = ""
+	if not (rawget(_G, "scavock_gear") and scavock_gear.equipped) then
+		return t
+	end
+	for _, slot in ipairs({ "hat", "top", "vest", "bottoms", "shoes" }) do
+		local ok, st = pcall(scavock_gear.equipped, player, slot)
+		if ok and st and not st:is_empty() then
+			local tex = WEAR[st:get_name()]
+			if tex then
+				t = t .. "^" .. tex
+			end
+		end
+	end
+	return t
+end
+
 function scavock.apply_character(player)
 	local o = opts(player)
 	player:set_properties({
 		visual = "mesh",
 		mesh = "scavock_character.obj",
-		textures = { composite(o) },
+		textures = { composite(o) .. wear_layers(player) },
 		visual_size = { x = 1, y = 1 },
 		backface_culling = false,
 	})

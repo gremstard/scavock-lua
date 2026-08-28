@@ -260,6 +260,70 @@ local function call_tick(hash)
 	end
 end
 
+-- The console PANEL (playtest: the lever was undiscoverable). Shows the
+-- structure checklist and one big button — like opening a furnace.
+local function console_status(pos)
+	local beacons, doors = survey(pos)
+	local hash = core.hash_node_position(pos)
+	local call = calls[hash]
+	local meta = core.get_meta(pos)
+	local now = math.floor(core.get_gametime())
+	local cd = meta:get_int("cooldown_until") - now
+	return beacons, doors, call, math.max(cd, 0)
+end
+
+function show_console(pos, name)
+	local beacons, doors, call, cd = console_status(pos)
+	local broken = #beacons < 1 or #doors < 4
+	local fs = {
+		"formspec_version[6]", "size[9.6,8.2]",
+		"label[0.4,0.6;EVAC CONSOLE]",
+		"label[0.4,1.4;Structure check:]",
+		("label[0.7,1.9;%s  Sky beacon  (%d found)]")
+			:format(#beacons >= 1 and "OK " or "MISSING", #beacons),
+		("label[0.7,2.4;%s  Trapdoors  (%d of 4)]")
+			:format(#doors >= 4 and "OK " or (#doors >= 1 and "DAMAGED" or "MISSING"),
+				#doors),
+		("label[0.4,3.2;%s]"):format(core.formspec_escape(
+			broken and "BROKEN evac: it still works, just slower (+"
+				.. BROKEN_X .. "s). Replace missing blocks to repair."
+			or "Structure intact.")),
+		"label[0.4,4.4;How it works: CALL, then watch the beacon — RED to"
+			.. "]",
+		"label[0.4,4.8;GREEN to BLUE. At blue the trapdoors open: get in the"
+			.. "]",
+		"label[0.4,5.2;pit, then CLOSE THE DOORS. Whoever pulls it decides"
+			.. "]",
+		"label[0.4,5.6;who leaves.]",
+	}
+	if call and call.phase == "open" then
+		fs[#fs + 1] = "button[0.4,6.6;8.8,1.0;evac_close;CLOSE THE DOORS — EXTRACT EVERYONE INSIDE]"
+	elseif call then
+		fs[#fs + 1] = "label[0.4,6.9;Call in progress — watch the beacon.]"
+	elseif cd > 0 then
+		fs[#fs + 1] = ("label[0.4,6.9;Recharging: %ds left.]"):format(cd)
+	elseif #beacons < 1 or #doors < 1 then
+		fs[#fs + 1] = "label[0.4,6.9;Cannot call: build the missing blocks first.]"
+	else
+		fs[#fs + 1] = "button[0.4,6.6;8.8,1.0;evac_call;CALL EVAC]"
+	end
+	core.show_formspec(name, "scavock_evac:console", table.concat(fs))
+end
+
+core.register_on_player_receive_fields(function(player, formname, fields)
+	if formname ~= "scavock_evac:console" then return end
+	if not (fields.evac_call or fields.evac_close) then return end
+	local pos = core.string_to_pos(player:get_meta():get_string("evac_console_at"))
+	if not pos then return end
+	if vector.distance(player:get_pos(), pos) > 6 then return end
+	local def = core.registered_nodes["scavock_evac:console"]
+	def._pull_lever(pos, nil, player)
+	core.after(0.3, function()
+		local p = core.get_player_by_name(player:get_player_name())
+		if p then show_console(pos, p:get_player_name()) end
+	end)
+end)
+
 core.register_node("scavock_evac:console", {
 	description = "Evac Console (required block — pull the lever)",
 	tiles = { "scavock_console.png" },
@@ -276,6 +340,12 @@ core.register_node("scavock_evac:console", {
 			core.chat_send_player(name, "You can't work a console while downed.")
 			return
 		end
+		-- chest/furnace-style interaction: right-click opens the panel
+		clicker:get_meta():set_string("evac_console_at", core.pos_to_string(pos))
+		show_console(pos, name)
+	end,
+	_pull_lever = function(pos, node, clicker)
+		local name = clicker:get_player_name()
 		local hash = core.hash_node_position(pos)
 		local call = calls[hash]
 

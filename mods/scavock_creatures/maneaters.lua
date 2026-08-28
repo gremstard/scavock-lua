@@ -44,6 +44,7 @@ end
 scavock.boa_hold = {} -- player name -> boa luaentity
 
 define("titanoboa", {
+	body = "serpent",
 	collisionbox = { -0.8, 0, -0.8, 0.8, 1.0, 0.8 },
 	visual_size = { x = 1.6, y = 1.0, z = 4.0 },
 	tex = "scavock_titanoboa.png", tex_face = "scavock_titanoboa_face.png",
@@ -160,6 +161,7 @@ end)
 -- The breach is the commitment window.
 -- ---------------------------------------------------------------------------
 define("megisto", {
+	body = "quad",
 	collisionbox = { -0.7, 0, -0.7, 0.7, 1.5, 0.7 },
 	visual_size = { x = 1.4, y = 1.5, z = 2.4 },
 	tex = "scavock_megisto.png", tex_face = "scavock_megisto_face.png",

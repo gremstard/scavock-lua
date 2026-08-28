@@ -49,13 +49,17 @@ def rect(px, x0, y0, x1, y1, color):
 SCALE = 1.0 / 16.0  # -> ~2.0 units tall
 
 # name: (size(w,h,d), position of box min-corner (x,y,z) px, uv origin (u,v))
+# CLASSIC 64x32 skin layout (Luanti's standard character type): left limbs
+# reuse the right-limb UV regions, so any 64x32 skin drops straight in.
+# The canvas stays 64x64 — the top half is the skin, and clothing overlays
+# composite over the same sheet ("64x64 for the clothes on top").
 BOXES = {
     "head":  ((8, 8, 8),  (-4, 24, -4), (0, 0)),
     "torso": ((8, 12, 4), (-4, 12, -2), (16, 16)),
     "rarm":  ((4, 12, 4), (-8, 12, -2), (40, 16)),
-    "larm":  ((4, 12, 4), (4, 12, -2),  (32, 48)),
+    "larm":  ((4, 12, 4), (4, 12, -2),  (40, 16)),
     "rleg":  ((4, 12, 4), (-4, 0, -2),  (0, 16)),
-    "lleg":  ((4, 12, 4), (0, 0, -2),   (16, 48)),
+    "lleg":  ((4, 12, 4), (0, 0, -2),   (0, 16)),
 }
 
 def uv(u, v):
@@ -174,6 +178,42 @@ def main():
         b = canvas()
         rect(b, u0 + d + 1, v0 + d + h - rows, u0 + d + w - 1, v0 + d + h, WHT)
         write_png(os.path.join(TEXDIR, "scavock_beard_%d.png" % i), b)
+
+    # clothing overlays: worn garments composite over the skin
+    def paint_box_sides(px, boxname, color, rows_from=0, rows_to=None):
+        size, pos, (u0, v0) = BOXES[boxname]
+        w, h, d = size
+        r1 = v0 + d + rows_from
+        r2 = v0 + d + (rows_to if rows_to is not None else h)
+        rect(px, u0, r1, u0 + 2 * d + 2 * w, r2, color)
+    def paint_box_top(px, boxname, color):
+        size, pos, (u0, v0) = BOXES[boxname]
+        w, h, d = size
+        rect(px, u0 + d, v0, u0 + d + w, v0 + d, color)
+
+    LEATHER = (139, 98, 62, 255)
+    CLOTH = (96, 104, 92, 255)
+    VESTC = (70, 76, 68, 255)
+    PANTSC = (110, 82, 50, 255)
+    BOOTC = (60, 46, 32, 255)
+
+    wear = canvas(); paint_box_top(wear, "head", LEATHER)
+    paint_box_sides(wear, "head", LEATHER, 0, 2)
+    write_png(os.path.join(TEXDIR, "scavock_wear_cap.png"), wear)
+
+    wear = canvas()
+    paint_box_sides(wear, "torso", CLOTH)
+    paint_box_sides(wear, "rarm", CLOTH, 0, 6)
+    write_png(os.path.join(TEXDIR, "scavock_wear_shirt.png"), wear)
+
+    wear = canvas(); paint_box_sides(wear, "torso", VESTC, 1, 10)
+    write_png(os.path.join(TEXDIR, "scavock_wear_vest.png"), wear)
+
+    wear = canvas(); paint_box_sides(wear, "rleg", PANTSC)
+    write_png(os.path.join(TEXDIR, "scavock_wear_pants.png"), wear)
+
+    wear = canvas(); paint_box_sides(wear, "rleg", BOOTC, 9, 12)
+    write_png(os.path.join(TEXDIR, "scavock_wear_shoes.png"), wear)
 
     print("player assets written")
 

@@ -8,6 +8,7 @@ local H = scavock_creatures.helpers
 -- Megalania — the patient pursuer. Bites once, then FOLLOWS while the
 -- venom works. You cannot outrun a consequence already inside you.
 define("megalania", {
+	body = "quad",
 	collisionbox = { -0.7, 0, -0.7, 0.7, 0.9, 0.7 },
 	visual_size = { x = 1.4, y = 0.9, z = 2.6 },
 	tex = "scavock_megalania.png", tex_face = "scavock_megalania_face.png",
@@ -23,6 +24,7 @@ define("megalania", {
 -- Counterplay is the noise system: it is audible before it commits if
 -- you are quiet enough to hear it (it emits noise when it telegraphs).
 define("terrorbird", {
+	body = "bird",
 	collisionbox = { -0.45, 0, -0.45, 0.45, 1.6, 0.45 },
 	visual_size = { x = 0.9, y = 1.6, z = 1.1 },
 	tex = "scavock_terrorbird.png", tex_face = "scavock_terrorbird_face.png",
@@ -39,6 +41,7 @@ define("terrorbird", {
 -- creature that teaches the weak-point read. Frontal hits are absorbed;
 -- hits from behind (or during its committed charge) land fully.
 define("glyptodon", {
+	body = "quad",
 	collisionbox = { -0.8, 0, -0.8, 0.8, 1.1, 0.8 },
 	visual_size = { x = 1.6, y = 1.1, z = 2.2 },
 	tex = "scavock_glyptodon.png", tex_face = "scavock_glyptodon_face.png",
@@ -102,6 +105,7 @@ core.register_entity("scavock_creatures:thrown_rock", {
 })
 
 define("giganto", {
+	body = "biped",
 	collisionbox = { -0.7, 0, -0.7, 0.7, 2.2, 0.7 },
 	visual_size = { x = 1.4, y = 2.2, z = 1.0 },
 	tex = "scavock_giganto.png", tex_face = "scavock_giganto_face.png",
@@ -156,6 +160,7 @@ define("giganto", {
 -- Argentavis — the aerial threat. Circles at altitude, dives to strike.
 -- Untouchable while circling, hittable in melee DURING the dive (§24.3).
 define("argentavis", {
+	body = "bird",
 	collisionbox = { -0.6, 0, -0.6, 0.6, 0.6, 0.6 },
 	visual_size = { x = 2.4, y = 0.5, z = 1.2 },
 	tex = "scavock_argentavis.png", tex_face = "scavock_argentavis_face.png",
@@ -205,6 +210,7 @@ define("argentavis", {
 -- Underground pair (§24.8b): the cave bear reuses the surface bear's
 -- two-phase AI; the cave hyena fills the wolf-pack role underground.
 define("cavebear", {
+	body = "quad",
 	collisionbox = { -0.65, 0, -0.65, 0.65, 1.4, 0.65 },
 	visual_size = { x = 1.3, y = 1.4, z = 2.0 },
 	tex = "scavock_cavebear.png", tex_face = "scavock_cavebear_face.png",
@@ -218,6 +224,7 @@ define("cavebear", {
 })
 
 define("hyena", {
+	body = "quad",
 	collisionbox = { -0.45, 0, -0.45, 0.45, 0.9, 0.45 },
 	visual_size = { x = 0.9, y = 0.9, z = 1.4 },
 	tex = "scavock_hyena.png", tex_face = "scavock_hyena_face.png",
@@ -232,6 +239,7 @@ define("hyena", {
 -- gives it the two things already learned on the way here: a heavy melee
 -- and the Gigantopithecus throw. Nothing invented beyond that.
 define("yeti", {
+	body = "biped",
 	collisionbox = { -0.7, 0, -0.7, 0.7, 2.4, 0.7 },
 	visual_size = { x = 1.4, y = 2.4, z = 1.0 },
 	tex = "scavock_yeti.png", tex_face = "scavock_yeti_face.png",
