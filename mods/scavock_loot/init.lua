@@ -52,8 +52,34 @@ function scavock_loot_fill_crate(pos)
 	-- deterministic per world+position, so re-generation can't re-roll it
 	local seed = core.hash_node_position(pos)
 	local rng = PcgRandom(seed)
+
+	-- The Source: the endgame haul (§4b: advanced technology, high tier)
+	if meta:get_string("source_loot") == "1" then
+		inv:add_item("main", "scavock_core:titanium_ingot "
+			.. rng:next(2, 4))
+		inv:add_item("main", "scavock_core:graphene_ingot "
+			.. rng:next(1, 2))
+		inv:add_item("main", "scavock_under:advtech")
+		return
+	end
+
 	for _ = 1, rng:next(3, 6) do
-		inv:add_item("main", roll(rng))
+		local stack = roll(rng)
+		-- §25: per-item 50/50 upgraded/downgraded in mutated areas
+		local mutated = meta:get_string("mut_loot") == "1"
+			or (scavock.mutation_at and scavock.mutation_at(pos) > 0.72)
+		if mutated and scavock_under then
+			stack = scavock_under.mutate_stack(stack)
+		end
+		inv:add_item("main", stack)
+	end
+
+	-- the Cavock compass: ONE per Cavock, a named object the whole server
+	-- will know about (§4b confirmed)
+	if meta:get_string("cavock_compass") == "1" then
+		local c = ItemStack("scavock_under:compass_cavock")
+		c:get_meta():set_string("preset", "icelands")
+		inv:add_item("main", c)
 	end
 end
 

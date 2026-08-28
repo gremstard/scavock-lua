@@ -897,6 +897,66 @@ def trapdoor_tex():
     return border(px, (50, 53, 60))
 add("scavock_evac", "scavock_trapdoor", trapdoor_tex)
 
+# ---------- discovery chain (§4b/4c) ----------
+def tinted_stone(tint, name):
+    def fn():
+        px = noise_fill((120, 120, 122), 10, R("stone"))
+        for y in range(SIZE):
+            for x in range(SIZE):
+                r, g, b, a = px[y][x]
+                px[y][x] = (clamp((r + tint[0]) // 2), clamp((g + tint[1]) // 2),
+                            clamp((b + tint[2]) // 2), a)
+        return px
+    return fn
+add("scavock_under", "scavock_stone_mut", tinted_stone((182, 214, 46), "smut"))
+add("scavock_under", "scavock_stone_cavock", tinted_stone((217, 118, 30), "scav"))
+def mut_grass():
+    px = noise_fill((140, 180, 40), 14, R("mutgrass"))
+    return px
+add("scavock_under", "scavock_mut_grass_top", mut_grass)
+def tech_block():
+    px = noise_fill((70, 74, 82), 5, R("tech"))
+    border(px, (50, 53, 60))
+    for x in range(2, 14, 4):
+        px[7][x] = (182, 214, 46, 255); px[8][x] = (86, 90, 98, 255)
+    return px
+add("scavock_under", "scavock_tech", tech_block)
+def ice_city():
+    px = noise_fill((190, 210, 230), 8, R("icecity"))
+    return border(px, (150, 170, 195))
+add("scavock_under", "scavock_ice_city", ice_city)
+def source_core():
+    px = noise_fill((40, 44, 52), 6, R("source"))
+    blob(px, 8, 8, 5, (182, 214, 46))
+    blob(px, 8, 8, 2, (228, 224, 212))
+    return px
+add("scavock_under", "scavock_source", source_core)
+def adv_tech():
+    px = blank()
+    for y in range(4, 12):
+        for x in range(4, 12):
+            px[y][x] = (70, 74, 82, 255)
+    px[7][7] = (182, 214, 46, 255); px[8][8] = (182, 214, 46, 255)
+    px[7][8] = (228, 224, 212, 255); px[8][7] = (228, 224, 212, 255)
+    return px
+add("scavock_under", "scavock_advtech", adv_tech)
+def compass_tex(preset=False):
+    def fn():
+        px = blank()
+        import math as _m
+        for a in range(0, 360, 8):
+            x = int(8 + 6 * _m.cos(_m.radians(a)))
+            y = int(8 + 6 * _m.sin(_m.radians(a)))
+            px[y][x] = (86, 90, 98, 255)
+        for i in range(1, 6):
+            px[8 - i][8] = (179, 58, 36, 255) if not preset else (217, 118, 30, 255)
+            if i < 4:
+                px[8 + i][8] = (228, 224, 212, 255)
+        return px
+    return fn
+add("scavock_compass", "scavock_compass", compass_tex(False))
+add("scavock_compass", "scavock_compass_cavock", compass_tex(True))
+
 def main():
     n = 0
     for rel, fn in OUT.items():
