@@ -861,6 +861,25 @@ def trigger_button():
     return px
 add("scavock_boom", "scavock_trigger_button", trigger_button)
 
+# ---------- bow upgrades (§17) ----------
+def bow_piercing():
+    px = OUT["mods/scavock_weapons/textures/scavock_bow.png"]()
+    for y in range(2, 14):
+        if px[y][12][3] > 0:
+            px[y][12] = (170, 186, 205, 255)
+    px[2][13] = (170, 186, 205, 255); px[13][2] = (170, 186, 205, 255)
+    return px
+add("scavock_weapons", "scavock_bow_piercing", bow_piercing)
+def arrow_fx(tip):
+    def fn():
+        px = OUT["mods/scavock_weapons/textures/scavock_arrow.png"]()
+        px[2][13] = (*tip, 255); px[3][12] = (*tip, 255); px[3][13] = (*tip, 255)
+        return px
+    return fn
+add("scavock_weapons", "scavock_arrow_poison", arrow_fx((182, 214, 46)))
+add("scavock_weapons", "scavock_arrow_fire", arrow_fx((217, 118, 30)))
+add("scavock_weapons", "scavock_arrow_explosive", arrow_fx((179, 58, 36)))
+
 def main():
     n = 0
     for rel, fn in OUT.items():

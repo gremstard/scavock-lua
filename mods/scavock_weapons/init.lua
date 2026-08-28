@@ -88,7 +88,32 @@ local ARROW_DAMAGE = 5
 core.register_craftitem("scavock_weapons:arrow", {
 	description = "Arrow (recoverable)",
 	inventory_image = "scavock_arrow.png",
+	groups = { scavock_arrow = 1 },
 })
+
+-- §17: effects are a SUPPLY decision — consumed on impact, the arrow
+-- reverts to plain and stays recoverable. No enchanting; physical only.
+local EFFECTS = {
+	poison = { desc = "Poison Arrow (venom on hit; reverts to plain)",
+		tex = "scavock_arrow_poison.png" },
+	fire = { desc = "Fire Arrow (burns on hit; reverts to plain)",
+		tex = "scavock_arrow_fire.png" },
+	explosive = { desc = "Explosive Arrow (small blast; reverts to plain)",
+		tex = "scavock_arrow_explosive.png" },
+}
+for id, e in pairs(EFFECTS) do
+	core.register_craftitem("scavock_weapons:arrow_" .. id, {
+		description = e.desc,
+		inventory_image = e.tex,
+		groups = { scavock_arrow = 1, ["arrow_" .. id] = 1 },
+	})
+end
+core.register_craft({ type = "shapeless", output = "scavock_weapons:arrow_poison",
+	recipe = { "scavock_weapons:arrow", "scavock_survival:berry_mut" } })
+core.register_craft({ type = "shapeless", output = "scavock_weapons:arrow_fire",
+	recipe = { "scavock_weapons:arrow", "scavock_power:oil" } })
+core.register_craft({ type = "shapeless", output = "scavock_weapons:arrow_explosive",
+	recipe = { "scavock_weapons:arrow", "scavock_boom:grenade" } })
 
 core.register_craft({
 	output = "scavock_weapons:arrow 4",
@@ -109,6 +134,8 @@ core.register_entity("scavock_weapons:arrow_entity", {
 		static_save = false,
 	},
 	_shooter = nil,
+	_effect = nil,
+	_damage = ARROW_DAMAGE,
 	_life = 0,
 	on_step = function(self, dtime, moveresult)
 		local obj = self.object
@@ -125,7 +152,10 @@ core.register_entity("scavock_weapons:arrow_entity", {
 		local ray = core.raycast(last, pos, true, false)
 		for hit in ray do
 			if hit.type == "node" then
-				-- stick into the world as a recoverable item
+				if self._effect == "explosive" and scavock_boom then
+					scavock_boom.explode(hit.intersection_point, 1, 8)
+				end
+				-- reverts to plain, stays recoverable (§17)
 				core.add_item(hit.intersection_point, "scavock_weapons:arrow")
 				obj:remove()
 				return
@@ -134,11 +164,19 @@ core.register_entity("scavock_weapons:arrow_entity", {
 					and hit.ref:is_player()
 					and hit.ref:get_player_name() == self._shooter
 				if not is_shooter then
+					local dmg = self._damage
+					if self._effect == "fire" then dmg = dmg + 3 end
 					hit.ref:punch(obj, 1.0, {
 						full_punch_interval = 1.0,
-						damage_groups = { fleshy = ARROW_DAMAGE },
+						damage_groups = { fleshy = dmg },
 					}, nil)
-					-- half of arrows survive a body hit (recoverable, degraded odds)
+					if self._effect == "poison" and hit.ref:is_player()
+							and scavock_survival then
+						scavock_survival.venom(hit.ref, 6)
+					elseif self._effect == "explosive" and scavock_boom then
+						scavock_boom.explode(pos, 1, 6)
+					end
+					-- half of arrows survive a body hit, as plain arrows
 					if math.random(2) == 1 then
 						core.add_item(pos, "scavock_weapons:arrow")
 					end
@@ -154,11 +192,24 @@ local function shoot(itemstack, user)
 	if not user or not user:is_player() then return itemstack end
 	if scavock.downed[user:get_player_name()] then return itemstack end
 	local inv = user:get_inventory()
-	if not inv:contains_item("main", "scavock_weapons:arrow") then
+	-- the FIRST arrow stack in the pack (anchor order) is nocked — arrange
+	-- your grid to choose what flies (§9 the grid is a decision surface)
+	local effect, found_idx
+	for i = 1, inv:get_size("main") do
+		local st = inv:get_stack("main", i)
+		if core.get_item_group(st:get_name(), "scavock_arrow") > 0 then
+			found_idx = i
+			effect = st:get_name():match("^scavock_weapons:arrow_(%a+)$")
+			break
+		end
+	end
+	if not found_idx then
 		core.chat_send_player(user:get_player_name(), "No arrows in your backpack.")
 		return itemstack
 	end
-	inv:remove_item("main", "scavock_weapons:arrow")
+	local st = inv:get_stack("main", found_idx)
+	st:take_item()
+	inv:set_stack("main", found_idx, st)
 
 	local pos = vector.add(user:get_pos(), { x = 0, y = 1.5, z = 0 })
 	local dir = user:get_look_dir()
@@ -169,6 +220,11 @@ local function shoot(itemstack, user)
 		obj:set_rotation({ x = -math.asin(dir.y), y = math.atan2(dir.x, dir.z), z = 0 })
 		local ent = obj:get_luaentity()
 		ent._shooter = user:get_player_name()
+		ent._effect = effect
+		if itemstack:get_name() == "scavock_weapons:bow_piercing" then
+			ent._damage = ARROW_DAMAGE + 3
+			obj:set_velocity(vector.multiply(dir, ARROW_SPEED * 1.3))
+		end
 	end
 	itemstack:add_wear(65535 / 120) -- ~120 shots per bow
 	return itemstack
@@ -180,6 +236,17 @@ core.register_tool("scavock_weapons:bow", {
 	on_use = shoot,
 	on_secondary_use = shoot,
 })
+
+-- §17: bows upgrade STRUCTURALLY first (piercing), then carry effects
+core.register_tool("scavock_weapons:bow_piercing", {
+	description = "Piercing Bow\nStructural upgrade: harder, faster arrows.",
+	inventory_image = "scavock_bow_piercing.png",
+	on_use = shoot,
+	on_secondary_use = shoot,
+})
+core.register_craft({ type = "shapeless", output = "scavock_weapons:bow_piercing",
+	recipe = { "scavock_weapons:bow", "scavock_core:steel_ingot",
+		"scavock_core:steel_ingot" } })
 
 core.register_craft({
 	output = "scavock_weapons:bow",
