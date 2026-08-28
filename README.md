@@ -45,6 +45,7 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 | Long TTK, gradual gear slope (§7) | ✅ +0..+2 damage across five tiers; no one-shots |
 | Blocking windows per weapon (§7) | ✅ right-click opens the window (dagger 0.55s … war axe 0.22s); sprint halves it; 75% absorb |
 | Stagger: chance, weight-scaled, ICD (§7) | ✅ 8% dagger … 32% war axe (max 40%); 2s internal cooldown; brief hard slow |
+| Creatures: simplified model, knockback not stagger (§7/§24) | ✅ wolves (pack hunters, pack-alert on aggro), boars (neutral, provoked charge), rats (ruin scavengers, flee when hurt); box visuals; leather drops |
 | Two-stage death (§12) | ✅ lethal damage downs (1 HP, crawl 0.12x, no jump/interact/attack); one more hit finishes → full drop; downed can't be looted (nothing drops until finished) |
 | Revives (§12 table) | ✅ right-click a downed player: bare 10%/6s, med kit 20%/4s, stabiliser 30%/2s; kits craftable + in crate loot |
 | STEP_HEIGHT = 1.0 (§7) | ✅ `stepheight = 1.1` |
@@ -80,8 +81,8 @@ drops where you fell* (§12), while your small **Vault** survives (§5).
 ### Deferred (big rocks, in doc order)
 
 
-reinforcement crafting + damage pool (§11), noise & stealth (§8), creatures
-(§24), Icelands/Cavock/Muvock and the compass system (§4b/4c), proximity voice,
+reinforcement crafting + damage pool (§11), noise & stealth (§8), the
+§24 megafauna/Man Eater/cryptid tier (ordinary animals are in), Icelands/Cavock/Muvock and the compass system (§4b/4c), proximity voice,
 wipe cycles as a server feature, evac block-structure damage/repair (D1).
 
 ## Dev notes

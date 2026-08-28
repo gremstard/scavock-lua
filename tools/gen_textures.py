@@ -417,6 +417,42 @@ def stabiliser():
     return px
 add("scavock_death", "scavock_stabiliser", stabiliser)
 
+# ---------- creatures (§24: ordinary animals, box visuals) ----------
+def fur(base, name, streak):
+    def fn():
+        px = noise_fill(base, 10, R(name))
+        return speckle(px, streak, 10, R(name + "s"), 1)
+    return fn
+def face(base, name, eye=(20, 20, 22)):
+    def fn():
+        px = noise_fill(base, 10, R(name))
+        px[6][4] = (*eye, 255); px[6][5] = (*eye, 255)
+        px[6][10] = (*eye, 255); px[6][11] = (*eye, 255)
+        for y in range(11, 14):
+            for x in range(6, 10):
+                px[y][x] = tuple(clamp(c - 30) for c in base) + (255,)
+        return px
+    return fn
+add("scavock_creatures", "scavock_wolf", fur((120, 118, 115), "wolf", (90, 88, 86)))
+add("scavock_creatures", "scavock_wolf_face", face((120, 118, 115), "wolfface"))
+add("scavock_creatures", "scavock_boar", fur((104, 76, 52), "boar", (80, 56, 38)))
+def boar_face():
+    px = face((104, 76, 52), "boarface")()
+    px[12][5] = (228, 224, 212, 255); px[11][5] = (228, 224, 212, 255)
+    px[12][10] = (228, 224, 212, 255); px[11][10] = (228, 224, 212, 255)
+    return px
+add("scavock_creatures", "scavock_boar_face", boar_face)
+add("scavock_creatures", "scavock_rat", fur((70, 68, 66), "rat", (52, 50, 48)))
+add("scavock_creatures", "scavock_rat_face", face((70, 68, 66), "ratface", eye=(180, 60, 40)))
+def leather():
+    px = blank()
+    for y in range(4, 12):
+        for x in range(3, 13):
+            if (x + y) % 9 != 0:
+                px[y][x] = (139, 98, 62, 255)
+    return px
+add("scavock_core", "scavock_leather", leather)
+
 def main():
     n = 0
     for rel, fn in OUT.items():

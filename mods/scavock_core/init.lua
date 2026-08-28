@@ -235,6 +235,10 @@ for _, m in ipairs(scavock.materials) do
 		inventory_image = "scavock_" .. m.name .. "_ingot.png",
 	})
 end
+core.register_craftitem("scavock_core:leather", {
+	description = "Leather (from animals — the ladder's first rung)",
+	inventory_image = "scavock_leather.png",
+})
 core.register_craftitem("scavock_core:stick", {
 	description = "Stick",
 	inventory_image = "scavock_stick.png",
